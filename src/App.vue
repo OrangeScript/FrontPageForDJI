@@ -1,101 +1,208 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
 
-// 后端地址
+// Axios 实例
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'http://localhost:8080/drone',
   timeout: 5000
 })
 
-// 表单数据（直接映射 ControlRequest）
-const form = ref({
+// ===== 表单数据 =====
+const controlForm = reactive({
   command: 'TAKE_OFF',
   forward: null,
   right: null,
   up: null,
-  yaw: null
+  yaw: null,
+  speed: null,
+  latitude: null,
+  longitude: null,
+  altitude: null
 })
 
-function sendCommand() {
-  api.post('/control', form.value)
-    .then(() => {
-      alert('指令已发送')
-    })
-    .catch(err => {
-      console.error(err)
-      alert('发送失败')
-    })
+const vsForm = reactive({
+  mode: 'NORMAL', // NORMAL / ADVANCED
+  lv: 0, lh: 0, rv: 0, rh: 0,
+  roll: 0, pitch: 0, yaw: 0, throttle: 0
+})
+
+// ===== 飞行器状态 =====
+const vsState = ref(null)
+
+// ===== 通用发送函数 =====
+async function sendControl() {
+  try {
+    await api.post('/control', controlForm)
+    alert('Control 指令已发送')
+    resetControlForm()
+  } catch (e) {
+    console.error(e)
+    alert('发送失败')
+  }
 }
+
+async function sendVS() {
+  try {
+    await api.post('/vs', vsForm)
+    alert('Virtual Stick 指令已发送')
+    resetVSForm()
+  } catch (e) {
+    console.error(e)
+    alert('发送失败')
+  }
+}
+
+// ===== 获取飞行器状态 =====
+async function fetchState() {
+  try {
+    const res = await api.get('/info')
+    vsState.value = res.data.data
+  } catch (e) {
+    console.error('状态获取失败', e)
+  }
+}
+
+// 自动刷新状态
+let stateTimer = null
+onMounted(() => {
+  fetchState()
+  stateTimer = setInterval(fetchState, 1000)
+})
+
+function resetControlForm() {
+  controlForm.command = 'TAKE_OFF'
+  controlForm.forward = null
+  controlForm.right = null
+  controlForm.up = null
+  controlForm.yaw = null
+  controlForm.speed = null
+  controlForm.latitude = null
+  controlForm.longitude = null
+  controlForm.altitude = null
+}
+
+function resetVSForm() {
+  vsForm.mode = 'NORMAL'
+  vsForm.lv = 0
+  vsForm.lh = 0
+  vsForm.rv = 0
+  vsForm.rh = 0
+  vsForm.roll = 0
+  vsForm.pitch = 0
+  vsForm.yaw = 0
+  vsForm.throttle = 0
+}
+
 </script>
 
 <template>
-  <img src="https://www.google.com/logos/doodles/2025/seasonal-holidays-2025-6753651837110711.4-la1f1f1f.gif"/>
+  <div class="layout">
   <div class="container">
     <h2>无人机控制面板</h2>
 
-
-    <div class="row">
-      <label>指令类型</label>
-      <select v-model="form.command">
-        <option value="TAKE_OFF">起飞</option>
-        <option value="LAND">降落</option>
-        <option value="GO_HOME">返航</option>
-        <option value="MOVE">移动</option>
-        <option value="ROTATE">旋转</option>
-      </select>
+    <!-- 基础指令 -->
+    <div class="section">
+      <h3>基础指令</h3>
+      <button @click="controlForm.command='TAKE_OFF'; sendControl()">起飞</button>
+      <button @click="controlForm.command='LAND'; sendControl()">降落</button>
+      <button @click="controlForm.command='GO_HOME'; sendControl()">返航</button>
+      <button @click="controlForm.command='HOVER'; sendControl()">悬停</button>
+      <button @click="controlForm.command='EMERGENCY_STOP'; sendControl()">紧急停止</button>
     </div>
 
-    <div v-if="form.command === 'MOVE'" class="row">
-      <label>前后 (m)</label>
-      <input type="number" v-model.number="form.forward" />
+    <!-- MOVE / ROTATE -->
+    <div class="section">
+      <h3>移动/旋转</h3>
+      <label>命令
+        <select v-model="controlForm.command">
+          <option value="MOVE">移动</option>
+          <option value="ROTATE">旋转</option>
+        </select>
+      </label>
+
+      <div v-if="controlForm.command === 'MOVE'">
+        <label>前后 (m) <input type="number" v-model.number="controlForm.forward"/></label>
+        <label>左右 (m) <input type="number" v-model.number="controlForm.right"/></label>
+        <label>上下 (m) <input type="number" v-model.number="controlForm.up"/></label>
+      </div>
+
+      <div v-if="controlForm.command === 'ROTATE'">
+        <label>偏航角 (°) <input type="number" v-model.number="controlForm.yaw"/></label>
+      </div>
+
+      <button @click="sendControl()">发送</button>
     </div>
 
-    <div v-if="form.command === 'MOVE'" class="row">
-      <label>左右 (m)</label>
-      <input type="number" v-model.number="form.right" />
+    <!-- 虚拟摇杆 -->
+    <div class="section">
+      <h3>虚拟摇杆</h3>
+      <label>模式
+        <select v-model="vsForm.mode">
+          <option value="NORMAL">普通</option>
+          <option value="ADVANCED">高级</option>
+        </select>
+      </label>
+
+      <div v-if="vsForm.mode === 'NORMAL'">
+        <label>左竖 LV <input type="number" v-model.number="vsForm.lv"/></label>
+        <label>左横 LH <input type="number" v-model.number="vsForm.lh"/></label>
+        <label>右竖 RV <input type="number" v-model.number="vsForm.rv"/></label>
+        <label>右横 RH <input type="number" v-model.number="vsForm.rh"/></label>
+      </div>
+
+      <div v-if="vsForm.mode === 'ADVANCED'">
+        <label>Pitch <input type="number" v-model.number="vsForm.pitch"/></label>
+        <label>Roll <input type="number" v-model.number="vsForm.roll"/></label>
+        <label>Yaw <input type="number" v-model.number="vsForm.yaw"/></label>
+        <label>Throttle <input type="number" v-model.number="vsForm.throttle"/></label>
+      </div>
+
+      <button @click="sendVS()">发送摇杆</button>
     </div>
 
-    <div v-if="form.command === 'MOVE'" class="row">
-      <label>上下 (m)</label>
-      <input type="number" v-model.number="form.up" />
+    <!-- 当前状态 -->
+    <div class="section">
+      <h3>飞行器状态</h3>
+      <table>
+        <tbody>
+          <tr><td>ID</td><td>{{ vsState?.id ?? '-' }}</td></tr>
+          <tr><td>时间</td><td>{{ vsState?.timestamp ?? '-' }}</td></tr>
+          <tr><td>纬度</td><td>{{ vsState?.latitude ?? '-' }}</td></tr>
+          <tr><td>经度</td><td>{{ vsState?.longitude ?? '-' }}</td></tr>
+          <tr><td>高度 (m)</td><td>{{ vsState?.altitude ?? '-' }}</td></tr>
+          <tr><td>速度 (m/s)</td><td>{{ vsState?.speed ?? '-' }}</td></tr>
+          <tr><td>航向 (°)</td><td>{{ vsState?.heading ?? '-' }}</td></tr>
+          <tr><td>Pitch (°)</td><td>{{ vsState?.pitch ?? '-' }}</td></tr>
+          <tr><td>Roll (°)</td><td>{{ vsState?.roll ?? '-' }}</td></tr>
+          <tr><td>Yaw (°)</td><td>{{ vsState?.yaw ?? '-' }}</td></tr>
+          <tr><td>电量 (%)</td><td>{{ vsState?.battery ?? '-' }}</td></tr>
+          <tr><td>状态</td><td>{{ vsState?.status ?? '-' }}</td></tr>
+        </tbody>
+      </table>
     </div>
+  </div>
+  <div class="video-panel">
+      <h3>无人机实时画面</h3>
 
-    <div v-if="form.command === 'ROTATE'" class="row">
-      <label>偏航角 (°)</label>
-      <input type="number" v-model.number="form.yaw" />
+      <video
+        ref="remoteVideo"
+        autoplay
+        playsinline
+        muted
+      ></video>
+
+      <div class="video-tip">
+        等待无人机视频流接入…
+      </div>
     </div>
-
-    <button @click="sendCommand">发送指令</button>
   </div>
 </template>
 
 <style scoped>
-.container {
-  max-width: 400px;
-  margin: 40px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
-.row {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-}
-
-label {
-  width: 120px;
-}
-
-input, select {
-  flex: 1;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  cursor: pointer;
-}
+.container { max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 6px;}
+.section { margin-bottom: 24px; padding: 10px; border: 1px solid #eee; border-radius: 4px;}
+label { display:block; margin: 6px 0;}
+input, select { width: 100%; padding: 4px;}
+button { margin-top: 6px; padding: 6px 12px; cursor:pointer;}
 </style>
