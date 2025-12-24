@@ -1,12 +1,21 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
-
+import {WebRTCReceiver} from './client.js'
 // Axios 实例
 const api = axios.create({
   baseURL: 'http://localhost:8080/drone',
   timeout: 5000
 })
+
+const remoteVideo = ref(null)
+let webrtc = null
+// 预留：后续 WebRTC 成功后
+function attachStream(stream) {
+  if (remoteVideo.value) {
+    remoteVideo.value.srcObject = stream
+  }
+}
 
 // ===== 表单数据 =====
 const controlForm = reactive({
@@ -66,6 +75,12 @@ async function fetchState() {
 // 自动刷新状态
 let stateTimer = null
 onMounted(() => {
+  webrtc = new WebRTCReceiver(
+    remoteVideo.value,
+    'ws://localhost:8080'
+  )
+  webrtc.start()
+  
   fetchState()
   stateTimer = setInterval(fetchState, 1000)
 })
@@ -200,9 +215,59 @@ function resetVSForm() {
 </template>
 
 <style scoped>
-.container { max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 6px;}
-.section { margin-bottom: 24px; padding: 10px; border: 1px solid #eee; border-radius: 4px;}
+/* 整体左右布局 */
+.layout {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* 左侧控制面板 */
+.container {
+  flex: 1;
+  max-width: 600px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* 右侧视频面板 */
+.video-panel {
+  flex: 1;
+  min-width: 400px;
+  background: #000;
+  color: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 视频本体 */
+.video-panel video {
+  width: 100%;
+  max-height: 420px;
+  background: black;
+  border: 1px solid #333;
+}
+
+/* 提示文字 */
+.video-tip {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* 原有样式保留 */
+.section {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
 label { display:block; margin: 6px 0;}
 input, select { width: 100%; padding: 4px;}
 button { margin-top: 6px; padding: 6px 12px; cursor:pointer;}
+
 </style>
