@@ -77,10 +77,10 @@ let stateTimer = null
 onMounted(() => {
   webrtc = new WebRTCReceiver(
     remoteVideo.value,
-    'ws://localhost:8080'
+    'ws://localhost:8080/signal?'
   )
   webrtc.start()
-  
+
   fetchState()
   stateTimer = setInterval(fetchState, 1000)
 })
