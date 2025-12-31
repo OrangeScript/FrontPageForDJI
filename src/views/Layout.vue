@@ -1,5 +1,4 @@
 <script setup>
-
 </script>
 <template>
     <el-container>
@@ -16,7 +15,7 @@
             <!-- 班级管理菜单 -->
             <el-sub-menu index="/me">
               <template #title>
-                <el-icon><Menu /></el-icon> 控制
+                <el-icon><UserFilled /></el-icon> 控制
               </template>
               <el-menu-item index="/control">
                 <el-icon><UserFilled /></el-icon>飞行控制
@@ -28,7 +27,9 @@
             <el-menu-item index="/canvas">
                 <el-icon><UserFilled /></el-icon>画图执行路线
               </el-menu-item>
-            
+            <el-menu-item index="/live">
+                <el-icon><UserFilled /></el-icon>直播
+              </el-menu-item>
           </el-menu>
         </el-aside>
         

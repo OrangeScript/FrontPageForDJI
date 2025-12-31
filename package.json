@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "element-plus": "^2.13.0",
+    "flv.js": "^1.6.2",
+    "hls.js": "^1.6.15",
     "vue": "^3.2.38",
     "vue-router": "^4.6.4"
   },
