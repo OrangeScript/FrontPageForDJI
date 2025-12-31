@@ -16,6 +16,28 @@ const api = axios.create({
   baseURL: 'http://localhost:8080/drone'
 })
 
+const controlState = ref({
+  pitch: 0,
+  roll: 0,
+  yaw: 0,
+  throttle: 0
+})
+
+let lastSentState = {
+  pitch: 0,
+  roll: 0,
+  yaw: 0,
+  throttle: 0
+}
+
+function hasChanged(a, b) {
+  return (
+    a.pitch !== b.pitch ||
+    a.roll !== b.roll ||
+    a.yaw !== b.yaw ||
+    a.throttle !== b.throttle
+  )
+}
 
 function onKey(e, down) {
   const k = e.key.toLowerCase()
@@ -42,7 +64,7 @@ function update(dt) {
     pos.value.y -= vy * speed * dt
   }
 
-  // ===== 垂直油门 =====
+  
   if (keys['space']) {
     verticalSpeed.value = climbSpeed
   } else {
@@ -52,14 +74,29 @@ function update(dt) {
   altitude.value += verticalSpeed.value * dt
   altitude.value = Math.max(0, altitude.value)
 
-  // ===== 发送给后端 =====
-  api.post('/vs', {
-    mode: 'ADVANCED',
-    pitch: vy,
-    roll: vx,
-    yaw: yaw.value,
-    throttle: verticalSpeed.value
-  })
+
+  controlState.value.pitch = vy
+  controlState.value.roll = vx
+  controlState.value.yaw = yaw.value
+  controlState.value.throttle = verticalSpeed.value
+
+}
+
+let sendTimer = null
+
+function startSendLoop() {
+  sendTimer = setInterval(() => {
+    const cur = controlState.value
+
+    if (hasChanged(cur, lastSentState)) {
+      api.post('/vs', {
+        mode: 'ADVANCED',
+        ...cur
+      })
+
+      lastSentState = { ...cur }
+    }
+  }, 100) // 10Hz，真实无人机常用
 }
 
 let last = performance.now()
@@ -70,44 +107,83 @@ function loop(now) {
 
   update(dt)
   draw()
-
+  recordTrail()
   requestAnimationFrame(loop)
 }
 
 function draw() {
   const ctx = canvasRef.value.getContext('2d')
-  ctx.clearRect(0, 0, 600, 400)
+  const W = 600
+  const H = 400
 
-  // 地图
-  ctx.strokeStyle = '#ddd'
-  ctx.strokeRect(0, 0, 600, 400)
+  ctx.clearRect(0, 0, W, H)
 
-  // 无人机
+  const cx = W / 2
+  const cy = H / 2
+
+  ctx.save()
+
+  // ===== 摄像机反向移动 =====
+  ctx.translate(cx - pos.value.x, cy - pos.value.y)
+
+  // ===== 尾巴 =====
+  ctx.strokeStyle = 'rgba(0, 150, 255, 0.6)'
+  ctx.beginPath()
+  trail.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y)
+    else ctx.lineTo(p.x, p.y)
+  })
+  ctx.stroke()
+
+  // ===== 飞机 =====
   ctx.save()
   ctx.translate(pos.value.x, pos.value.y)
   ctx.rotate(yaw.value * Math.PI / 180)
 
   ctx.beginPath()
-  ctx.moveTo(0, -10)
-  ctx.lineTo(6, 10)
-  ctx.lineTo(-6, 10)
+  ctx.moveTo(0, -12)
+  ctx.lineTo(8, 10)
+  ctx.lineTo(-8, 10)
   ctx.closePath()
   ctx.fillStyle = 'red'
   ctx.fill()
 
   ctx.restore()
+  ctx.restore()
+
+  // ===== UI 边框 =====
+  ctx.strokeStyle = '#ccc'
+  ctx.strokeRect(0, 0, W, H)
 }
 
 onMounted(() => {
   window.addEventListener('keydown', e => onKey(e, true))
   window.addEventListener('keyup', e => onKey(e, false))
+  startSendLoop()
   requestAnimationFrame(loop)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('keyup', onKey)
+  clearInterval(sendTimer)
 })
+const trail = []
+const TRAIL_TIME = 3000 // ms
+function recordTrail() {
+  trail.push({
+    x: pos.value.x,
+    y: pos.value.y,
+    t: performance.now()
+  })
+
+  const now = performance.now()
+  while (trail.length && now - trail[0].t > TRAIL_TIME) {
+    trail.shift()
+  }
+}
+
+
 </script>
 <template>
   <div class="control-layout">
