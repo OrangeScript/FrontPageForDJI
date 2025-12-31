@@ -178,25 +178,7 @@ function resetVSForm() {
     </div>
 
     <!-- 当前状态 -->
-    <div class="section">
-      <h3>飞行器状态</h3>
-      <table>
-        <tbody>
-          <tr><td>ID</td><td>{{ vsState?.id ?? '-' }}</td></tr>
-          <tr><td>时间</td><td>{{ vsState?.timestamp ?? '-' }}</td></tr>
-          <tr><td>纬度</td><td>{{ vsState?.latitude ?? '-' }}</td></tr>
-          <tr><td>经度</td><td>{{ vsState?.longitude ?? '-' }}</td></tr>
-          <tr><td>高度 (m)</td><td>{{ vsState?.altitude ?? '-' }}</td></tr>
-          <tr><td>速度 (m/s)</td><td>{{ vsState?.speed ?? '-' }}</td></tr>
-          <tr><td>航向 (°)</td><td>{{ vsState?.heading ?? '-' }}</td></tr>
-          <tr><td>Pitch (°)</td><td>{{ vsState?.pitch ?? '-' }}</td></tr>
-          <tr><td>Roll (°)</td><td>{{ vsState?.roll ?? '-' }}</td></tr>
-          <tr><td>Yaw (°)</td><td>{{ vsState?.yaw ?? '-' }}</td></tr>
-          <tr><td>电量 (%)</td><td>{{ vsState?.battery ?? '-' }}</td></tr>
-          <tr><td>状态</td><td>{{ vsState?.status ?? '-' }}</td></tr>
-        </tbody>
-      </table>
-    </div>
+    
   </div>
   <div class="video-panel">
       <h3>无人机实时画面</h3>

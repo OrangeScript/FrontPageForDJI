@@ -22,10 +22,12 @@
                 <el-icon><UserFilled /></el-icon>飞行控制
               </el-menu-item>
             </el-sub-menu>
-            <el-menu-item index="/control">
-                <el-icon><UserFilled /></el-icon>飞行控制
+            <el-menu-item index="/info">
+                <el-icon><UserFilled /></el-icon>飞行信息
               </el-menu-item>
-            
+            <el-menu-item index="/canvas">
+                <el-icon><UserFilled /></el-icon>画图执行路线
+              </el-menu-item>
             
           </el-menu>
         </el-aside>
