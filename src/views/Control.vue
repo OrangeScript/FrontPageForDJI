@@ -1,150 +1,140 @@
+<template>
+  <el-card shadow="hover">
+    <h3>🚁 无人机控制面板</h3>
+
+    <!-- 基础控制 -->
+    <div class="control-section">
+      <el-button type="success" @click="sendCommand('takeoff')">起飞</el-button>
+      <el-button type="danger" @click="sendCommand('land')">降落</el-button>
+      <el-button type="warning" @click="sendCommand('RTH')">返航</el-button>
+      <el-button @click="sendCommand('abortMission')">停止虚拟杆</el-button>
+      <el-button @click="sendCommand('abort/DJIMission')">停止DJI任务</el-button>
+      <el-button type="primary" @click="sendCommand('enableVirtualStick')">启用虚拟杆</el-button>
+    </div>
+
+    <el-divider>导航控制</el-divider>
+
+    <!-- 直接到坐标 -->
+    <div class="control-section">
+      <el-input-number v-model="wp.lat" placeholder="纬度" label="lat" :step="0.000001" />
+      <el-input-number v-model="wp.lon" placeholder="经度" label="lon" :step="0.000001" />
+      <el-input-number v-model="wp.alt" placeholder="高度(m)" label="alt" />
+      <el-input-number v-model="wp.yaw" placeholder="航向(°)" label="yaw" />
+      <el-button @click="sendCommand('gotoWP')">导航到坐标</el-button>
+      <el-button @click="sendCommand('gotoWPwithPID')">PID导航</el-button>
+      <el-button @click="sendCommand('gotoYaw')">旋转到航向</el-button>
+      <el-button @click="sendCommand('gotoAltitude')">变更高度</el-button>
+    </div>
+
+    <el-divider>轨迹控制 (虚拟杆 / 原生任务)</el-divider>
+
+    <div class="control-section">
+      <el-input
+        type="textarea"
+        v-model="trajectory"
+        placeholder="lat,lon,alt;lat,lon,alt,yaw"
+        rows="3"
+      />
+      <el-button @click="sendCommand('navigateTrajectory')">虚拟杆轨迹</el-button>
+      <el-button @click="sendCommand('navigateTrajectoryDJINative')">DJI原生任务</el-button>
+    </div>
+
+    <el-divider>虚拟杆输入</el-divider>
+    <div class="control-section">
+      <el-input-number v-model="stick.leftX" placeholder="左摇杆X" />
+      <el-input-number v-model="stick.leftY" placeholder="左摇杆Y" />
+      <el-input-number v-model="stick.rightX" placeholder="右摇杆X" />
+      <el-input-number v-model="stick.rightY" placeholder="右摇杆Y" />
+      <el-button @click="sendCommand('stick')">发送虚拟杆</el-button>
+    </div>
+
+    <el-divider>相机控制</el-divider>
+    <div class="control-section">
+      <el-input-number v-model="cameraZoom" placeholder="缩放倍数" />
+      <el-button @click="sendCommand('camera/zoom')">缩放</el-button>
+      <el-button @click="sendCommand('camera/startRecording')">开始录像</el-button>
+      <el-button @click="sendCommand('camera/stopRecording')">停止录像</el-button>
+    </div>
+
+    <el-divider>云台控制</el-divider>
+    <div class="control-section">
+      <el-input-number v-model="gimbal.roll" placeholder="roll" />
+      <el-input-number v-model="gimbal.pitch" placeholder="pitch" />
+      <el-input-number v-model="gimbal.yaw" placeholder="yaw" />
+      <el-button @click="sendCommand('gimbal/pitch')">云台Pitch</el-button>
+      <el-button @click="sendCommand('gimbal/yaw')">云台Yaw</el-button>
+    </div>
+
+    <el-divider></el-divider>
+
+    <div>
+      <h4>返回结果：</h4>
+      <pre>{{ result }}</pre>
+    </div>
+  </el-card>
+</template>
+
 <script setup>
-import { reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { reactive, ref } from 'vue';
+import axios from 'axios';
 
-import {
-  takeOff,
-  land,
-  goHome,
-  hover,
-  emergencyStop
-} from '@/api/control'
+const API_BASE = 'http://localhost:8080/send';
 
-import { sendVS } from '@/api/virtualStick'
+const result = ref('');
 
-/* ===== 虚拟摇杆状态 ===== */
-const vs = reactive({
-  mode: 'NORMAL',
+const wp = reactive({ lat: null, lon: null, alt: null, yaw: null });
+const trajectory = ref('');
+const stick = reactive({ leftX: 0, leftY: 0, rightX: 0, rightY: 0 });
+const cameraZoom = ref(1);
+const gimbal = reactive({ roll: 0, pitch: 0, yaw: 0 });
 
-  // NORMAL
-  lv: 0,
-  lh: 0,
-  rv: 0,
-  rh: 0,
+async function sendCommand(command) {
+  let url = `${API_BASE}/${command}`;
+  let payload = {};
 
-  // ADVANCED
-  pitch: 0,
-  roll: 0,
-  yaw: 0,
-  throttle: 0
-})
+  switch (command) {
+    case 'gotoWP':
+      payload = { lat: wp.lat, lon: wp.lon, alt: wp.alt };
+      break;
+    case 'gotoWPwithPID':
+      payload = { lat: wp.lat, lon: wp.lon, alt: wp.alt, yaw: wp.yaw };
+      break;
+    case 'gotoYaw':
+      payload = { yaw_angle: wp.yaw };
+      break;
+    case 'gotoAltitude':
+      payload = { altitude: wp.alt };
+      break;
+    case 'navigateTrajectory':
+    case 'navigateTrajectoryDJINative':
+      payload = { trajectory: trajectory.value };
+      break;
+    case 'stick':
+      payload = { leftX: stick.leftX, leftY: stick.leftY, rightX: stick.rightX, rightY: stick.rightY };
+      break;
+    case 'camera/zoom':
+      payload = { zoom_ratio: cameraZoom.value };
+      break;
+    case 'gimbal/pitch':
+    case 'gimbal/yaw':
+      payload = { roll: gimbal.roll, pitch: gimbal.pitch, yaw: gimbal.yaw };
+      break;
+  }
 
-
-function onSendVS() {
-  sendVS(vs)
-  ElMessage.success('虚拟摇杆指令已发送')
+  try {
+    const res = await axios.post(url, payload);
+    result.value = JSON.stringify(res.data, null, 2);
+  } catch (err) {
+    result.value = err.toString();
+  }
 }
 </script>
 
-
-<template>
-  <div class="station">
-
-    <!-- 标题 -->
-    <el-page-header content="无人机地面控制站" />
-
-    <el-row :gutter="20" class="main">
-
-      <!-- 左：基础控制 -->
-      <el-col :span="10">
-        <el-card shadow="hover">
-          <template #header>🚁 基础控制</template>
-
-          <el-space direction="vertical" fill size="large">
-
-            <el-button-group>
-              <el-button type="success" @click="takeOff">起飞</el-button>
-              <el-button type="warning" @click="land">降落</el-button>
-              <el-button type="primary" @click="hover">悬停</el-button>
-              <el-button type="info" @click="goHome">返航</el-button>
-            </el-button-group>
-
-            <el-divider />
-
-            <el-button
-              type="danger"
-              size="large"
-              @click="emergencyStop"
-            >
-              紧急停止
-            </el-button>
-
-          </el-space>
-        </el-card>
-      </el-col>
-
-      <!-- 右：虚拟摇杆 -->
-      <el-col :span="14">
-  <el-card shadow="hover">
-    <template #header>🎮 虚拟摇杆</template>
-
-    <el-form label-width="90px">
-
-      <!-- 模式选择 -->
-      <el-form-item label="模式">
-        <el-radio-group v-model="vs.mode">
-          <el-radio-button value="NORMAL">普通</el-radio-button>
-          <el-radio-button value="ADVANCED">高级</el-radio-button>
-        </el-radio-group>
-      </el-form-item>
-
-      <!-- ========== NORMAL 模式 ========== -->
-      <template v-if="vs.mode === 'NORMAL'">
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="左摇杆">
-              <el-slider v-model="vs.lv" :min="-1" :max="1" :step="0.05" />
-              <el-slider v-model="vs.lh" :min="-1" :max="1" :step="0.05" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="右摇杆">
-              <el-slider v-model="vs.rv" :min="-1" :max="1" :step="0.05" />
-              <el-slider v-model="vs.rh" :min="-1" :max="1" :step="0.05" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </template>
-
-      <!-- ========== ADVANCED 模式 ========== -->
-      <template v-else>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="Pitch (°)">
-              <el-slider v-model="vs.pitch" :min="-30" :max="30" />
-            </el-form-item>
-
-            <el-form-item label="Roll (°)">
-              <el-slider v-model="vs.roll" :min="-30" :max="30" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="Yaw (°/s)">
-              <el-slider v-model="vs.yaw" :min="-180" :max="180" />
-            </el-form-item>
-
-            <el-form-item label="Throttle (%)">
-              <el-slider v-model="vs.throttle" :min="0" :max="100" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </template>
-
-      <el-button
-        type="primary"
-        style="margin-top: 12px"
-        @click="onSendVS"
-      >
-        发送摇杆指令
-      </el-button>
-
-    </el-form>
-  </el-card>
-</el-col>
-
-
-    </el-row>
-  </div>
-</template>
+<style scoped>
+.control-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+</style>
