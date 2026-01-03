@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import { stick } from '../api/control'
 
 const canvasRef = ref(null)
 const pos = ref({ x: 300, y: 200 })
@@ -12,9 +12,6 @@ const climbSpeed = 1.0          // 上升速度 m/s
 const speed = 80 // px/s
 const keys = {}
 
-const api = axios.create({
-  baseURL: 'http://localhost:8080/drone'
-})
 
 const controlState = ref({
   pitch: 0,
@@ -89,11 +86,12 @@ function startSendLoop() {
     const cur = controlState.value
 
     if (hasChanged(cur, lastSentState)) {
-      api.post('/vs', {
-        mode: 'ADVANCED',
-        ...cur
-      })
-
+      stick(
+        cur.yaw,
+        cur.throttle,
+        cur.roll,
+        cur.pitch
+      )
       lastSentState = { ...cur }
     }
   }, 100) // 10Hz，真实无人机常用
