@@ -1,44 +1,34 @@
+// src/api/control.js
+import http from '@/utils/request'
 
-import request from '@/utils/request'
+export const takeoff = () => http.post('/send/takeoff')
+export const land = () => http.post('/send/land')
+export const RTH = () => http.post('/send/RTH')
 
+export const gotoWP = (lat, lon, alt) =>
+  http.post('/send/gotoWP', { lat, lon, alt })
 
-export const COMMAND = {
-  TAKE_OFF: 'TAKE_OFF',
-  LAND: 'LAND',
-  GO_HOME: 'GO_HOME',
-  HOVER: 'HOVER',
-  EMERGENCY_STOP: 'EMERGENCY_STOP',
-  MOVE: 'MOVE',
-  ROTATE: 'ROTATE'
-}
+export const gotoWPwithPID = (lat, lon, alt, yaw) =>
+  http.post('/send/gotoWPwithPID', { lat, lon, alt, yaw })
 
+export const gotoYaw = yaw_angle =>
+  http.post('/send/gotoYaw', { yaw_angle })
 
-function send(data) {
-  return request.post('/drone/control', data)
-}
+export const gotoAltitude = altitude =>
+  http.post('/send/gotoAltitude', { altitude })
 
+export const enableVirtualStick = () =>
+  http.post('/send/enableVirtualStick')
 
-export const takeOff = () => send({ command: COMMAND.TAKE_OFF })
-export const land = () => send({ command: COMMAND.LAND })
-export const goHome = () => send({ command: COMMAND.GO_HOME })
-export const hover = () => send({ command: COMMAND.HOVER })
-export const emergencyStop = () => send({ command: COMMAND.EMERGENCY_STOP })
+export const abortMission = () =>
+  http.post('/send/abortMission')
 
+export const stick = (leftX, leftY, rightX, rightY) =>
+  http.post('/send/stick', { leftX, leftY, rightX, rightY })
 
+// camera
+export const startRecording = () =>
+  http.post('/send/camera/startRecording')
 
-export function move({ forward = 0, right = 0, up = 0, speed = 1 }) {
-  return send({
-    command: COMMAND.MOVE,
-    forward,
-    right,
-    up,
-    speed
-  })
-}
-
-export function rotate(yaw = 0) {
-  return send({
-    command: COMMAND.ROTATE,
-    yaw
-  })
-}
+export const stopRecording = () =>
+  http.post('/send/camera/stopRecording')

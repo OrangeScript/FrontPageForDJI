@@ -1,51 +1,105 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-
-const state = ref(null)
-
-const api = axios.create({
-  baseURL: 'http://localhost:8080/drone'
-})
-
-async function fetchState() {
-  const res = await api.get('/info')
-  state.value = res.data.data
-}
+import { onMounted, computed } from 'vue'
+import { telemetry, connectTelemetry } from '@/api/info'
 
 onMounted(() => {
-  fetchState()
-  setInterval(fetchState, 1000)
+  connectTelemetry()
+})
+
+const batteryColor = computed(() => {
+  if (telemetry.batteryLevel > 50) return 'success'
+  if (telemetry.batteryLevel > 20) return 'warning'
+  return 'exception'
 })
 </script>
 
 <template>
-  <el-row :gutter="16">
-    <el-col :span="8">
-      <el-card>
-        <h3>📍 位置信息</h3>
-        <p>纬度：{{ state?.latitude }}</p>
-        <p>经度：{{ state?.longitude }}</p>
-        <p>高度：{{ state?.altitude }} m</p>
-      </el-card>
-    </el-col>
+  <el-scrollbar height="100%">
+    <el-space direction="vertical" fill size="large">
 
-    <el-col :span="8">
-      <el-card>
-        <h3>✈️ 姿态</h3>
-        <p>Pitch：{{ state?.pitch }}°</p>
-        <p>Roll：{{ state?.roll }}°</p>
-        <p>Yaw：{{ state?.yaw }}°</p>
-      </el-card>
-    </el-col>
+      <!-- Status -->
+      <el-card shadow="hover">
+        <template #header>📡 Flight Status</template>
 
-    <el-col :span="8">
-      <el-card>
-        <h3>🔋 状态</h3>
-        <p>电量：{{ state?.battery }}%</p>
-        <p>速度：{{ state?.speed }} m/s</p>
-        <p>状态：{{ state?.status }}</p>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="Mode">
+            {{ telemetry.flightMode }}
+          </el-descriptions-item>
+
+          <el-descriptions-item label="Heading">
+            {{ telemetry.heading }}°
+          </el-descriptions-item>
+
+          <el-descriptions-item label="Satellites">
+            {{ telemetry.satelliteCount }}
+          </el-descriptions-item>
+
+          <el-descriptions-item label="Distance Home">
+            {{ telemetry.distanceToHome }} m
+          </el-descriptions-item>
+        </el-descriptions>
       </el-card>
-    </el-col>
-  </el-row>
+
+      <!-- Battery -->
+      <el-card shadow="hover">
+        <template #header>🔋 Battery</template>
+
+        <el-progress
+          :percentage="telemetry.batteryLevel"
+          :status="batteryColor"
+          :stroke-width="18"
+        />
+        <p>Remaining Flight Time: {{ telemetry.remainingFlightTime }} s</p>
+      </el-card>
+
+      <!-- Location -->
+      <el-card shadow="hover">
+        <template #header>📍 Location</template>
+
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="Latitude">
+            {{ telemetry.location?.lat }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Longitude">
+            {{ telemetry.location?.lon }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Altitude">
+            {{ telemetry.location?.alt }} m
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Attitude -->
+      <el-card shadow="hover">
+        <template #header>🧭 Attitude</template>
+
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="Pitch">
+            {{ telemetry.attitude?.pitch }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Roll">
+            {{ telemetry.attitude?.roll }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Yaw">
+            {{ telemetry.attitude?.yaw }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Speed -->
+      <el-card shadow="hover">
+        <template #header>🚀 Speed</template>
+        <pre>{{ telemetry.speed }}</pre>
+      </el-card>
+
+    </el-space>
+  </el-scrollbar>
 </template>
+
+<style scoped>
+pre {
+  background: #111;
+  color: #0f0;
+  padding: 8px;
+}
+</style>

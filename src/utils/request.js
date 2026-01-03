@@ -1,11 +1,14 @@
 import axios from "axios";
+// src/config/server.js
+export const HTTP_BASE = import.meta.env.VITE_API_HTTP_BASE
+export const WS_BASE   = import.meta.env.VITE_API_WS_BASE
 
-const request = axios.create({
-    baseURL:'http://localhost:8080',
+const http = axios.create({
+    baseURL:HTTP_BASE,
     timeout: 60000
 })
 
-request.interceptors.response.use(
+http.interceptors.response.use(
     (response) => {
         return response.data
     },
@@ -14,4 +17,4 @@ request.interceptors.response.use(
     }
 )
 
-export default request
+export default http
