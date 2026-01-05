@@ -13,6 +13,7 @@ const speed = 80 // px/s
 const keys = {}
 
 
+
 const controlState = ref({
   pitch: 0,
   roll: 0,
@@ -49,14 +50,14 @@ function update(dt) {
   let vx = 0
   let vy = 0
 
-  if (keys['w']) vy += 1
-  if (keys['s']) vy -= 1
-  if (keys['a']) vx -= 1
-  if (keys['d']) vx += 1
+  if (keys['w']) vy += 0.01
+  if (keys['s']) vy -= 0.01
+  if (keys['a']) vx -= 0.01
+  if (keys['d']) vx += 0.01
 
   // ===== 水平运动 =====
   if (vx || vy) {
-    yaw.value = Math.atan2(vx, vy) * 180 / Math.PI
+    yaw.value = 0
     pos.value.x += vx * speed * dt
     pos.value.y -= vy * speed * dt
   }
@@ -94,7 +95,7 @@ function startSendLoop() {
       )
       lastSentState = { ...cur }
     }
-  }, 100) // 10Hz，真实无人机常用
+  }, 200) // 10Hz，真实无人机常用
 }
 
 let last = performance.now()
@@ -187,7 +188,7 @@ function recordTrail() {
   <div class="control-layout">
     <!-- 左侧：游戏区 -->
     <el-card class="game-panel">
-      <h3>🎮 无人机实时控制</h3>
+      <h3>无人机实时控制</h3>
       <canvas
         ref="canvasRef"
         width="600"

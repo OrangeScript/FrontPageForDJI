@@ -23,9 +23,12 @@ export const enableVirtualStick = () =>
 export const abortMission = () =>
   http.post('/send/abortMission')
 
-export const stick = (leftX, leftY, rightX, rightY) =>
-  http.post('/send/stick', { leftX, leftY, rightX, rightY })
-
+export const stick = (leftX = 0, leftY = 0, rightX = 0, rightY = 0) => {
+  const data = `${leftX},${leftY},${rightX},${rightY}`   // ✅ CSV string
+  return http.post('/send/stick', data, {
+    headers: { 'Content-Type': 'text/plain' }         // 必须 text/plain
+  })
+}
 // camera
 export const startRecording = () =>
   http.post('/send/camera/startRecording')

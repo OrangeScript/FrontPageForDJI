@@ -77,10 +77,10 @@ async function exec(fn, msg) {
           <template #header>🎮 Virtual Stick</template>
 
           <el-form label-width="60px" inline>
-            <el-form-item label="LX"><el-input-number v-model="stick.lx" /></el-form-item>
-            <el-form-item label="LY"><el-input-number v-model="stick.ly" /></el-form-item>
-            <el-form-item label="RX"><el-input-number v-model="stick.rx" /></el-form-item>
-            <el-form-item label="RY"><el-input-number v-model="stick.ry" /></el-form-item>
+            <el-form-item label="LX上下"><el-input-number v-model="stick.lx" /></el-form-item>
+            <el-form-item label="LY旋转"><el-input-number v-model="stick.ly" /></el-form-item>
+            <el-form-item label="RX左右"><el-input-number v-model="stick.rx" /></el-form-item>
+            <el-form-item label="RY前后"><el-input-number v-model="stick.ry" /></el-form-item>
           </el-form>
 
           <el-space>
