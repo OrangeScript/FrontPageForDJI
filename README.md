@@ -1,8 +1,6 @@
 # djiVue
 
 This template should help get you started developing with Vue 3 in Vite.
-···bash
-npm install
 
 ## Recommended IDE Setup
 
@@ -28,4 +26,14 @@ npm run dev
 
 ```sh
 npm run build
+```
+
+
+### LiveStream Setup
+```bash
+docker run -p 8000:8000 -it mpromonet/webrtc-streamer -n rtsp_stream -u rtsp://aaa:aaa@{rc_ip}:8554/streaming/live/1
+```
+this rtsp ip should be written in /src/views/LiveStream.vue replaced by ?
+```
+const RTSP_URL = '？'
 ```

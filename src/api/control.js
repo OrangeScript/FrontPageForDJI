@@ -35,3 +35,20 @@ export const startRecording = () =>
 
 export const stopRecording = () =>
   http.post('/send/camera/stopRecording')
+
+
+// 万向节 Pitch 控制
+export const gimbalPitch = (roll = 0, pitch = 0, yaw = 0) => {
+  const data = `${roll},${pitch},${yaw}`   // CSV
+  return http.post('/send/gimbal/pitch', data, {
+    headers: { 'Content-Type': 'text/plain' }
+  })
+}
+
+// 万向节 Yaw 控制
+export const gimbalYaw = (roll = 0, pitch = 0, yaw = 0) => {
+  const data = `${roll},${pitch},${yaw}`   // CSV
+  return http.post('/send/gimbal/yaw', data, {
+    headers: { 'Content-Type': 'text/plain' }
+  })
+}
