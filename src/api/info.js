@@ -15,7 +15,8 @@ export const telemetry = reactive({
 })
 
 let socket = null
-import { WS_BASE } from '../utils/request'
+// import { WS_BASE } from '../utils/request'
+const WS_BASE = 'ws://localhost:8765'
 export function connectTelemetry() {
   socket = new WebSocket(WS_BASE)
 

@@ -7,9 +7,9 @@ const pos = ref({ x: 300, y: 200 })
 const yaw = ref(0)
 const altitude = ref(10)        // 当前高度（m，用于显示）
 const verticalSpeed = ref(0)    // m/s
-const climbSpeed = 1.0          // 上升速度 m/s
+const climbSpeed = 0.01         // 上升速度 m/s
 
-const speed = 80 // px/s
+const speed = 8000 // px/s
 const keys = {}
 
 
@@ -38,36 +38,52 @@ function hasChanged(a, b) {
 }
 
 function onKey(e, down) {
-  const k = e.key.toLowerCase()
-  if (k === ' ') {
-    keys['space'] = down
-  } else {
-    keys[k] = down
+  const k = e.key
+
+  // WASD
+  if (['w','a','s','d'].includes(k.toLowerCase())) {
+    keys[k.toLowerCase()] = down
+    return
   }
+
+  // 小键盘 / 方向键
+  if (k === 'ArrowUp') keys['up'] = down
+  if (k === 'ArrowDown') keys['down'] = down
+  if (k === 'ArrowLeft') keys['left'] = down
+  if (k === 'ArrowRight') keys['right'] = down
 }
 
 function update(dt) {
   let vx = 0
   let vy = 0
+  let vyaw = 0
+
 
   if (keys['w']) vy += 0.01
   if (keys['s']) vy -= 0.01
   if (keys['a']) vx -= 0.01
   if (keys['d']) vx += 0.01
+  if (keys['left'])  vyaw += 0.5   // 左转
+  if (keys['right']) vyaw -= 0.5   // 右转
+
 
   // ===== 水平运动 =====
   if (vx || vy) {
-    yaw.value = 0
     pos.value.x += vx * speed * dt
     pos.value.y -= vy * speed * dt
   }
 
-  
-  if (keys['space']) {
+  if(vyaw)
+    yaw.value += vyaw * dt * 60
+
+  if (keys['up']) {
     verticalSpeed.value = climbSpeed
+  } else if (keys['down']) {
+    verticalSpeed.value = -climbSpeed
   } else {
     verticalSpeed.value = 0
   }
+
 
   altitude.value += verticalSpeed.value * dt
   altitude.value = Math.max(0, altitude.value)
@@ -75,7 +91,7 @@ function update(dt) {
 
   controlState.value.pitch = vy
   controlState.value.roll = vx
-  controlState.value.yaw = yaw.value
+  controlState.value.yaw = vyaw
   controlState.value.throttle = verticalSpeed.value
 
 }
@@ -95,7 +111,7 @@ function startSendLoop() {
       )
       lastSentState = { ...cur }
     }
-  }, 200) // 10Hz，真实无人机常用
+  }, 200) // 20Hz
 }
 
 let last = performance.now()
