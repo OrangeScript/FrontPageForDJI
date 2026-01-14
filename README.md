@@ -37,3 +37,9 @@ this rtsp ip should be written in /src/views/LiveStream.vue replaced by ?
 ```
 const RTSP_URL = '？'
 ```
+
+### WEBRTC_STREAMER_IP
+http://localhost:8000
+
+### TELEMETRY
+it is supported by python script, so we get it from http://localhost:8765
