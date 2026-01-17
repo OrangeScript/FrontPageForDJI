@@ -20,9 +20,9 @@ let webRtcServer = null
 const WEBRTC_SERVER = `${location.protocol}//${location.hostname}:8000`
 
 // RTSP 地址
-const RTSP_URL = 'rtsp://aaa:aaa@192.168.3.245:8554/streaming/live/1'
+const RTSP_URL = 'rtsp://aaa:aaa@10.87.49.48:8554/streaming/live/1'
 
-// ⚠️ 关键参数（来自你给的 HTML 示例）
+
 const RTSP_OPTIONS = 'rtptransport=tcp&timeout=60'
 
 onMounted(() => {
