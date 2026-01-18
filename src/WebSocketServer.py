@@ -13,7 +13,7 @@ async def telemetry_bridge(websocket, path):
     
     try:
         # 连接到TCP服务器
-        rc_ip = "192.168.3.245"
+        rc_ip = "10.87.49.48"
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_socket.settimeout(5)  # 设置超时
         tcp_socket.connect((rc_ip, 8081))

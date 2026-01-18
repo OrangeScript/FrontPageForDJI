@@ -1,5 +1,5 @@
 # djiVue
-
+****记得改YOLO,rawStream,LiveStream,.env里的IP地址****
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup
