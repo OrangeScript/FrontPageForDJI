@@ -254,7 +254,7 @@ async def get():
 
                 // 创建WebSocket连接
                 function createWebSocket() {
-                    const ws = new WebSocket(`ws://${window.location.host}/ws/camera_detection?camera_id=rtsp://localhost:554/live`);
+                    const ws = new WebSocket(`ws://${window.location.host}/ws/camera_detection?camera_id=rtsp://aaa:aaa@10.87.49.48:8554/streaming/live/1`);
 
                     ws.onopen = function() {
                         statusElement.textContent = '已连接';

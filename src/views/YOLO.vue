@@ -17,7 +17,7 @@ onMounted(() => {
   const ctx = canvas.value.getContext('2d')
 
   ws = new WebSocket(
-    `ws://${location.hostname}:8008/ws/camera_detection?camera_id=rtsp://localhost:554/live&fps_limit=10`
+    `ws://${location.hostname}:8008/ws/camera_detection?camera_id=rtsp://aaa:aaa@10.87.49.48:8554/streaming/live/1&fps_limit=10`
   )
 
   ws.onopen = () => {
