@@ -30,6 +30,9 @@
             <el-menu-item index="/live">
                 <el-icon><UserFilled /></el-icon>直播
               </el-menu-item>
+            <el-menu-item index="/test">
+                <el-icon><UserFilled /></el-icon>测试
+              </el-menu-item>
           </el-menu>
         </el-aside>
         

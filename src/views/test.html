@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket调试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #58a6ff;
+            margin-bottom: 20px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .panel h2 {
+            color: #58a6ff;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background: #1a472a;
+            color: #3fb950;
+        }
+        
+        .status.disconnected {
+            background: #4c2020;
+            color: #f85149;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #2ea043;
+        }
+        
+        button:disabled {
+            background: #30363d;
+            cursor: not-allowed;
+        }
+        
+        input {
+            padding: 8px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            flex: 1;
+        }
+        
+        .video-panel {
+            grid-column: 1 / -1;
+        }
+        
+        canvas {
+            width: 100%;
+            background: #000;
+            border-radius: 6px;
+        }
+        
+        .log {
+            height: 400px;
+            overflow-y: auto;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        
+        .log::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log::-webkit-scrollbar-track {
+            background: #161b22;
+        }
+        
+        .log::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+        
+        .log-entry.video {
+            background: #1a472a;
+            border-left: 3px solid #3fb950;
+        }
+        
+        .log-entry.detection {
+            background: #2e1a47;
+            border-left: 3px solid #8957e5;
+        }
+        
+        .log-entry.ocr {
+            background: #472e1a;
+            border-left: 3px solid #e5a157;
+        }
+        
+        .log-entry.error {
+            background: #4c2020;
+            border-left: 3px solid #f85149;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            color: #58a6ff;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #8b949e;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 WebSocket 调试工具</h1>
+        
+        <div class="grid">
+            <!-- 连接控制 -->
+            <div class="panel">
+                <h2>📡 连接控制</h2>
+                <div id="status" class="status disconnected">● 未连接</div>
+                <div class="controls">
+                    <input type="text" id="wsUrl" value="ws://localhost:8765" placeholder="WebSocket地址">
+                    <button id="connectBtn" onclick="toggleConnection()">连接</button>
+                </div>
+                <div class="controls">
+                    <button onclick="requestOCR()" id="ocrBtn" disabled>📝 触发OCR</button>
+                    <button onclick="getStatus()">📊 获取状态</button>
+                    <button onclick="clearLog()">🗑️ 清空日志</button>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="panel">
+                <h2>📊 实时统计</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="videoCount">0</div>
+                        <div class="stat-label">视频帧</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="detectionCount">0</div>
+                        <div class="stat-label">检测次数</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="ocrCount">0</div>
+                        <div class="stat-label">OCR次数</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="fps">0</div>
+                        <div class="stat-label">FPS</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 视频显示 -->
+            <div class="panel video-panel">
+                <h2>📺 视频流</h2>
+                <canvas id="videoCanvas"></canvas>
+            </div>
+            
+            <!-- 消息日志 -->
+            <div class="panel">
+                <h2>📜 消息日志</h2>
+                <div id="log" class="log"></div>
+            </div>
+            
+            <!-- 最新数据 -->
+            <div class="panel">
+                <h2>📦 最新数据</h2>
+                <div id="dataDisplay" class="log" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        // 统计
+        let videoCount = 0;
+        let detectionCount = 0;
+        let ocrCount = 0;
+        let lastFrameTime = Date.now();
+        let frameCounter = 0;
+        
+        // Canvas
+        const canvas = document.getElementById('videoCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function toggleConnection() {
+            if (isConnected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        }
+        
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            addLog(`🔌 连接到 ${url}`, 'info');
+            
+            ws = new WebSocket(url);
+            
+            ws.onopen = () => {
+                isConnected = true;
+                updateStatus(true);
+                addLog('✅ WebSocket已连接', 'info');
+                document.getElementById('connectBtn').textContent = '断开';
+                document.getElementById('ocrBtn').disabled = false;
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (e) {
+                    addLog(`❌ 解析错误: ${e.message}`, 'error');
+                }
+            };
+            
+            ws.onerror = (error) => {
+                addLog(`❌ 连接错误: ${error}`, 'error');
+            };
+            
+            ws.onclose = () => {
+                isConnected = false;
+                updateStatus(false);
+                addLog('❌ WebSocket已断开', 'error');
+                document.getElementById('connectBtn').textContent = '连接';
+                document.getElementById('ocrBtn').disabled = true;
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function handleMessage(data) {
+            const type = data.type;
+            
+            switch(type) {
+                case 'video':
+                    handleVideo(data);
+                    break;
+                case 'detection':
+                    handleDetection(data);
+                    break;
+                case 'ocr':
+                    handleOCR(data);
+                    break;
+                case 'status':
+                    handleStatus(data);
+                    break;
+                case 'response':
+                    handleResponse(data);
+                    break;
+                default:
+                    addLog(`⚠️ 未知消息类型: ${type}`, 'error');
+            }
+        }
+        
+        function handleVideo(data) {
+            videoCount++;
+            document.getElementById('videoCount').textContent = videoCount;
+            
+            addLog(`📺 视频帧 #${videoCount}`, 'video');
+            
+            // 绘制图像
+            if (data.image) {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = 'data:image/jpeg;base64,' + data.image;
+            }
+            
+            // 计算FPS
+            frameCounter++;
+            const now = Date.now();
+            if (now - lastFrameTime >= 1000) {
+                const fps = Math.round(frameCounter * 1000 / (now - lastFrameTime));
+                document.getElementById('fps').textContent = fps;
+                frameCounter = 0;
+                lastFrameTime = now;
+            }
+        }
+        
+        function handleDetection(data) {
+            detectionCount++;
+            document.getElementById('detectionCount').textContent = detectionCount;
+            
+            const dets = data.detections || [];
+            addLog(`🎯 检测 #${detectionCount}: ${dets.length}个对象`, 'detection');
+            
+            // 显示详细数据
+            updateDataDisplay('detection', data);
+        }
+        
+        function handleOCR(data) {
+            ocrCount++;
+            document.getElementById('ocrCount').textContent = ocrCount;
+            
+            const texts = data.ocr_texts || [];
+            addLog(`📝 OCR #${ocrCount}: ${texts.length}个文字, 耗时${data.processing_time_ms}ms`, 'ocr');
+            
+            // 显示详细数据
+            updateDataDisplay('ocr', data);
+        }
+        
+        function handleStatus(data) {
+            addLog(`📊 状态: ${JSON.stringify(data)}`, 'info');
+            updateDataDisplay('status', data);
+        }
+        
+        function handleResponse(data) {
+            addLog(`💬 响应: ${data.message || JSON.stringify(data)}`, 'info');
+        }
+        
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            if (connected) {
+                statusEl.className = 'status connected';
+                statusEl.textContent = '● 已连接';
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = '● 未连接';
+            }
+        }
+        
+        function addLog(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // 限制日志条数
+            while (logEl.children.length > 100) {
+                logEl.removeChild(logEl.firstChild);
+            }
+        }
+        
+        function updateDataDisplay(type, data) {
+            const displayEl = document.getElementById('dataDisplay');
+            
+            // 移除image字段以便显示
+            const displayData = { ...data };
+            if (displayData.image) {
+                displayData.image = `[${displayData.image.length} chars]`;
+            }
+            
+            const html = `
+                <div style="margin-bottom: 15px; padding: 10px; background: #0d1117; border-radius: 4px;">
+                    <strong style="color: #58a6ff;">${type.toUpperCase()}</strong>
+                    <pre style="margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; font-size: 11px;">${JSON.stringify(displayData, null, 2)}</pre>
+                </div>
+            `;
+            
+            displayEl.innerHTML = html + displayEl.innerHTML;
+            
+            // 限制显示条数
+            while (displayEl.children.length > 10) {
+                displayEl.removeChild(displayEl.lastChild);
+            }
+        }
+        
+        function requestOCR() {
+            if (!isConnected) return;
+            
+            ws.send(JSON.stringify({
+                command: 'request_ocr'
+            }));
+            
+            addLog('📤 发送OCR请求', 'info');
+        }
+        
+        function getStatus() {
+            if (!isConnected) return;
+            
+            ws.send(JSON.stringify({
+                command: 'get_status'
+            }));
+            
+            addLog('📤 请求状态', 'info');
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('🗑️ 日志已清空', 'info');
+        }
+    </script>
+</body>
+</html>
