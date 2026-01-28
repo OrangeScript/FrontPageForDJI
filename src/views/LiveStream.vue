@@ -6,7 +6,6 @@
 </template>
 
 <script setup>
-import rawStream from './rawStream.vue'
 import YOLOView from './YOLO.vue'
 </script>
 

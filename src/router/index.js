@@ -5,7 +5,6 @@ import IndexView from '@/views/index.vue'
 import InfoView from '@/views/Info.vue'
 import CanvasView from '@/views/Canvas.vue'
 import LiveView from '@/views/LiveStream.vue'
-import TestView from '@/views/testStream.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,7 +20,6 @@ const router = createRouter({
         {path: 'info' , component: InfoView},
         {path: 'canvas', component: CanvasView},
         {path: 'live', component : LiveView},
-        {path: 'test', component : TestView}
       ]
     }
   ]

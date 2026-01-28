@@ -1,62 +1,75 @@
 <template>
-  <div class="video-box">
-    <canvas ref="canvas" width="960" height="540"></canvas>
-    <!-- <div class="info">{{ status }}</div> -->
-     <!-- 这个status显示有问题，暂时不知道原因 -->
+  <div class="monitor-container">
+    <div class="video-grid">
+      <div class="video-card">
+        <h3>📹 原始摄像头 (Live)</h3>
+        <div class="video-wrapper">
+          <iframe 
+            src="http://localhost:8889/live" 
+            scrolling="no" 
+            frameborder="0"
+            allow="autoplay; fullscreen"
+          ></iframe>
+        </div>
+      </div>
+
+      <div class="video-card">
+        <h3>🤖 YOLO 识别结果 (AI Stream)</h3>
+        <div class="video-wrapper">
+          <iframe 
+            src="http://localhost:8889/stream" 
+            scrolling="no" 
+            frameborder="0"
+            allow="autoplay; fullscreen"
+          ></iframe>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-
-const canvas = ref(null)
-const status = ref('未连接')
-let ws = null
-
-onMounted(() => {
-  const ctx = canvas.value.getContext('2d')
-
-  ws = new WebSocket(
-    `ws://${location.hostname}:8008/ws/camera_detection?camera_id=rtsp://localhost:554/live&fps_limit=10`
-  )
-
-  ws.onopen = () => {
-    status.value = '已连接'
-  }
-
-  ws.onmessage = (e) => {
-    status.value = '已连接'
-    const data = JSON.parse(e.data)
-    if (!data.image_base64) return
-
-    const img = new Image()
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, canvas.value.width, canvas.value.height)
-    }
-    img.src = data.image_base64
-  }
-
-  ws.onclose = () => {
-    status.value = '已断开'
-  }
-})
-
-onBeforeUnmount(() => {
-  if (ws) ws.close()
-})
-</script>
-
 <style scoped>
-.video-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.monitor-container {
+  padding: 20px;
+  background-color: #1a1a1a;
+  min-height: 100vh;
+  color: white;
 }
-canvas {
-  border: 1px solid #333;
+
+.video-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 左右两栏 */
+  gap: 20px;
+}
+
+.video-card {
+  background: #2c2c2c;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+h3 {
+  margin-bottom: 10px;
+  text-align: center;
+  color: #4ade80; /* 绿色 */
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  height: 0;
+  overflow: hidden;
+  border-radius: 4px;
   background: black;
 }
-.info {
-  margin-top: 6px;
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 </style>
