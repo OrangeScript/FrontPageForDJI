@@ -23,7 +23,38 @@ export default defineConfig({
         // 关键步骤：重写路径
         // 浏览器发的是 /api/send/takeoff
         // 转发给无人机变成 /send/takeoff (因为Python端只认这个)
-        rewrite: (path) => path.replace(/^\/api/, '') 
+        rewrite: (path) => path.replace(/^\/api/, '') ,
+        configure: (proxy, options) => {
+          
+          // 1. 当代理向无人机发出请求时触发
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // 获取客户端的原始请求 URL
+            const clientUrl = req.url; 
+            // 获取最终发给无人机的 URL
+            const targetUrl = options.target + proxyReq.path;
+            
+            console.log('-----------------------------------------');
+            console.log('🚀 [代理发送] 浏览器请求:', clientUrl);
+            console.log('🎯 [代理转发] 目标地址:', targetUrl);
+            console.log('📋 [请求方法]', req.method);
+            
+            // 为了防止 socket hang up，这里顺便做一下“净化”
+            proxyReq.setHeader('Connection', 'close');
+            proxyReq.removeHeader('origin');
+            proxyReq.removeHeader('referer');
+          });
+
+          // 2. 当无人机回复数据时触发
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('✅ [代理接收] 无人机响应状态码:', proxyRes.statusCode);
+            console.log('-----------------------------------------');
+          });
+
+          // 3. 当发生错误时触发
+          proxy.on('error', (err, req, res) => {
+            console.log('❌ [代理报错] 发生错误:', err.message);
+            console.log('-----------------------------------------');
+          });}
       }
     }
   }
