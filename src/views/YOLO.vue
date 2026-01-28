@@ -5,7 +5,7 @@
         <h3>原始摄像头</h3>
         <div class="video-wrapper">
           <iframe 
-            src="http://localhost:8889/live" 
+            src="http://192.168.246.214:8889/live" 
             scrolling="no" 
             frameborder="0"
             allow="autoplay; fullscreen"
@@ -17,7 +17,7 @@
         <h3>YOLO 识别结果</h3>
         <div class="video-wrapper">
           <iframe 
-            src="http://localhost:8889/stream" 
+            src="http://192.168.246.214:8889/stream" 
             scrolling="no" 
             frameborder="0"
             allow="autoplay; fullscreen"

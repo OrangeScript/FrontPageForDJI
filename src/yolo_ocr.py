@@ -44,7 +44,7 @@ def cv2_add_chinese_text(img, text, position, textColor=(0, 255, 0), textSize=30
     return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
 
 class HighPerformanceDetectorPaddle:
-    def __init__(self, stream_source = 0, yolo_model='yolov8n.pt', use_gpu=True,rtsp_url=None):
+    def __init__(self, stream_source = 0, yolo_model='yolo11n.pt', use_gpu=True,rtsp_url=None):
         print("="*60)
         print("🚀 高性能检测系统 (PaddleOCR V5)")
         print("="*60)
@@ -143,6 +143,7 @@ class HighPerformanceDetectorPaddle:
 
             try:
                 self.ocr = PaddleOCR(
+                    use_gpu=False,
                     lang='ch',
                     use_textline_orientation=True
                 )
@@ -570,7 +571,7 @@ def main():
     parser = argparse.ArgumentParser(description='YOLO + PaddleOCR V5 实时检测')
     parser.add_argument('--camera', type=str, default="0", help='视频源: 传入摄像头ID (如 0) 或 RTSP流地址/视频文件路径')
     parser.add_argument('--push', type=str, default="", help='推流地址, 例如: rtsp://IP:8554/mystream')
-    parser.add_argument('--yolo', type=str, default='yolov8n.pt',
+    parser.add_argument('--yolo', type=str, default='yolo11n.pt',
                        help='YOLO模型 (默认: yolov8n.pt)')
     parser.add_argument('--cpu', action='store_true', help='强制使用CPU')
 
