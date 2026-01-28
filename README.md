@@ -1,7 +1,26 @@
 # djiVue
 ****记得改YOLO,rawStream,LiveStream,.env里的IP地址****
 This template should help get you started developing with Vue 3 in Vite.
+**开启mediamtx容器，注意MTX_WEBRTCADDITIONALHOSTS填入服务器ip地址**
 
+```powershell
+PS C:\Users\qq258> docker run --rm -it `
+  -e MTX_RTSPTRANSPORTS=tcp `
+  -e MTX_WEBRTCADDITIONALHOSTS=192.168.31.198 `
+  -p 8554:8554 `
+  -p 1935:1935 `
+  -p 8888:8888 `
+  -p 8889:8889 `
+  -p 8890:8890/udp `
+  -p 8189:8189/udp `
+  bluenviron/mediamtx:1-ffmpeg
+```
+
+开启原直播流转发。
+
+```bash
+ffmpeg -rtsp_transport tcp -i rtsp://jie:123456789a@192.168.31.118:554/Streaming/Channels/101  -c copy -f rtsp rtsp://localhost:8554/live
+```
 ## Recommended IDE Setup
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
