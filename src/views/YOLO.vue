@@ -2,7 +2,7 @@
   <div class="monitor-container">
     <div class="video-grid">
       <div class="video-card">
-        <h3>📹 原始摄像头 (Live)</h3>
+        <h3>原始摄像头</h3>
         <div class="video-wrapper">
           <iframe 
             src="http://localhost:8889/live" 
@@ -14,7 +14,7 @@
       </div>
 
       <div class="video-card">
-        <h3>🤖 YOLO 识别结果 (AI Stream)</h3>
+        <h3>YOLO 识别结果</h3>
         <div class="video-wrapper">
           <iframe 
             src="http://localhost:8889/stream" 
