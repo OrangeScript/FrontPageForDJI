@@ -1,14 +1,8 @@
 import axios from "axios";
 // src/config/server.js
-const REMOTE_IP = import.meta.env.VITE_API_REMOTE_IP
 export const HTTP_BASE = `/api`
-export const WS_BASE   = `ws://${REMOTE_IP}:8081`
-export const RTSP_STREAM_URL_WITH_AUTH = (
-  user = 'aaa',
-  pass = 'aaa'
-) =>
-  `rtsp://${user}:${pass}@${REMOTE_IP}:8554/streaming/live/1`
-  
+export const WS_BASE   = `ws://localhost:8080/ws/telemetry`
+
 const http = axios.create({
     baseURL:HTTP_BASE,
     timeout: 60000
