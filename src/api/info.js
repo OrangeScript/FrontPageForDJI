@@ -17,15 +17,15 @@ export const telemetry = reactive({
 let socket = null
 const WS_BASE = 'ws://192.168.246.214:8765'
 export function connectTelemetry() {
-  console.log('收到数据类型:', e.data.constructor.name)
   if (socket) socket.close()
-  
-  // 指定 'binary' 子协议可以告诉 websockify 我们准备好处理二进制了
-  socket = new WebSocket(WS_BASE, ['binary'])
-  
-  let buffer = '' 
-
-  socket.onmessage = async (e) => {
+    
+    // 指定 'binary' 子协议可以告诉 websockify 我们准备好处理二进制了
+    socket = new WebSocket(WS_BASE, ['binary'])
+    
+    let buffer = '' 
+    
+    socket.onmessage = async (e) => {
+    console.log('收到数据类型:', e.data.constructor.name)
     // 1. 模拟 Python 的 .decode('utf-8')
     // 这一步是核心：不管发来什么，都统一转成 String
     let textData = ''
@@ -34,7 +34,7 @@ export function connectTelemetry() {
     } else {
         textData = e.data // 如果本来就是文本，直接用
     }
-
+    console.log('收到数据:', textData)
     // 2. 下面是你原本的逻辑 (完全正确，不用改)
     buffer += textData
     
