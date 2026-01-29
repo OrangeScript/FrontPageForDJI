@@ -16,6 +16,10 @@ PS C:\Users\qq258> docker run --rm -it `
   bluenviron/mediamtx:1-ffmpeg
 ```
 
+```bash
+proxychains4 websockify 8765 10.87.49.48:8081
+```
+
 ```shell
 
 websockify 8765 10.87.49.48:8081
@@ -26,6 +30,8 @@ websockify 8765 10.87.49.48:8081
 
 ```bash
 ffmpeg -rtsp_transport tcp -i rtsp://jie:123456789a@192.168.31.118:554/Streaming/Channels/101  -c copy -f rtsp rtsp://localhost:8554/live
+ffmpeg -rtsp_transport tcp -i rtsp://aaa:aaa@10.87.49.48:8554/streaming/live/1  -c copy -f rtsp rtsp://localhost:8554/live
+ffmpeg -rtsp_transport tcp -i rtsp://aaa:aaa@127.0.0.1:8559/streaming/live/1 -c copy -f rtsp rtsp://localhost:8554/live
 ```
 ## Recommended IDE Setup
 
