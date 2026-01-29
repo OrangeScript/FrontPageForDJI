@@ -16,6 +16,12 @@ PS C:\Users\qq258> docker run --rm -it `
   bluenviron/mediamtx:1-ffmpeg
 ```
 
+```shell
+
+websockify 8765 10.87.49.48:8081
+
+```
+
 开启原直播流转发。
 
 ```bash
