@@ -1,7 +1,7 @@
 <script setup>
 import { reactive } from 'vue'
-import UavControl from '@/components/Uav/UavControl.vue'
-import UavShow from '@/components/Uav/UavShow.vue'
+import UavControl from '@/components/Control/Control.vue'
+import UavShow from '@/components/Control/Path.vue'
 import UavStatus from '@/components/Uav/UavStatus.vue'
 
 
