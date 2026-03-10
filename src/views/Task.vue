@@ -472,13 +472,30 @@ watch(allTasks, renderCharts, { deep: true })
 /* Tag 颜色 */
 :deep(.el-tag--dark) { border:none; }
 
-/* ---- 详情按钮 ---- */
-.detail-btn {
-  background:rgba(0,212,255,.1);color:#00d4ff;border:1px solid rgba(0,212,255,.25);
-  font-size:12px;font-weight:600;letter-spacing:.5px;padding:4px 10px;border-radius:4px;
+/* ---- 详情按钮：彻底覆盖 el-button 默认白色 ---- */
+:deep(.detail-btn.el-button) {
+  --el-button-bg-color: transparent !important;
+  --el-button-border-color: rgba(0,212,255,.25) !important;
+  --el-button-text-color: #00d4ff !important;
+  --el-button-hover-bg-color: rgba(0,212,255,.15) !important;
+  --el-button-hover-border-color: #00d4ff !important;
+  --el-button-hover-text-color: #00d4ff !important;
+  --el-button-active-bg-color: rgba(0,212,255,.2) !important;
+  --el-button-active-border-color: #00d4ff !important;
+  --el-button-active-text-color: #00d4ff !important;
+  background: rgba(0,212,255,.08) !important;
+  color: #00d4ff !important;
+  border: 1px solid rgba(0,212,255,.25) !important;
+  font-size:12px; font-weight:600; letter-spacing:.5px; padding:4px 10px; border-radius:4px;
   transition:all .25s;
 }
-.detail-btn:hover { background:rgba(0,212,255,.2);box-shadow:0 0 12px rgba(0,212,255,.2);border-color:#00d4ff; }
+:deep(.detail-btn.el-button:hover),
+:deep(.detail-btn.el-button:focus) {
+  background: rgba(0,212,255,.18) !important;
+  color: #00d4ff !important;
+  border-color: #00d4ff !important;
+  box-shadow: 0 0 12px rgba(0,212,255,.2);
+}
 
 /* ---- 详情弹窗 ---- */
 :deep(.detail-dialog .el-dialog) { background:rgba(6,20,38,.96);border:1px solid rgba(58,163,255,.2);border-radius:8px;color:#e0e6ed; }
