@@ -5,7 +5,7 @@
       class="aside"
       :width="asideWidth"
       @mouseenter="isHover = true"
-      @mouseleave="isHover = false"
+      @mouseleave="isHover = true"
     >
       <el-menu router class="menu" :collapse="menuCollapse" :collapse-transition="false">
         <el-menu-item index="/index">
@@ -23,7 +23,7 @@
           <span class="menu-text">任务管理</span>
         </el-menu-item>
         <el-menu-item index="/mission">
-          <el-icon class="emoji-icon"><span>�</span></el-icon>
+          <el-icon class="emoji-icon"><span>📊</span></el-icon>
           <span class="menu-text">任务统计</span>
         </el-menu-item>
 
@@ -89,7 +89,7 @@ import { logout } from '@/utils/mockAuth'
 const router = useRouter()
 const isHover = ref(false)
 
-const COLLAPSE_W = 64
+const COLLAPSE_W = 200
 const EXPAND_W = 200
 
 const asideWidth = computed(() => (isHover.value ? `${EXPAND_W}px` : `${COLLAPSE_W}px`))
