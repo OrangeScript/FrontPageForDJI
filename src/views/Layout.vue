@@ -18,10 +18,22 @@
           <span class="menu-text">无人机操控</span>
         </el-menu-item>
 
-        <el-menu-item index="/task">
-          <el-icon class="emoji-icon"><span>🗺️</span></el-icon>
-          <span class="menu-text">任务管理</span>
-        </el-menu-item>
+        <el-sub-menu>
+          <template #title>
+            <el-icon class="emoji-icon"><span>⚙️</span></el-icon>
+            <span class="menu-text">任务管理</span>
+          </template>
+
+          <el-menu-item index="/count">
+            <el-icon class="emoji-icon"><span>📊</span></el-icon>
+            <span class="menu-text">任务统计</span>
+          </el-menu-item>
+
+          <el-menu-item index="/task">
+            <el-icon class="emoji-icon"><span>🗺️</span></el-icon>
+            <span class="menu-text">任务执行情况</span>
+          </el-menu-item>
+        </el-sub-menu>
 
         <el-menu-item index="/info">
           <el-icon class="emoji-icon"><span>📡</span></el-icon>

@@ -11,6 +11,7 @@ import LiveView from '@/views/LiveStream.vue'
 import LoginView from '@/views/Login.vue'
 import RegisterView from '@/views/Register.vue'
 import UpdatePasswordView from '@/views/UpdatePassword.vue'
+import CountView from '@/views/Count.vue'
 
 const routes = [
   {
@@ -44,6 +45,7 @@ const routes = [
       { path: 'control', component: ControlView },
       { path: 'canvas', component: CanvasView },
       { path: 'live', component: LiveView },
+      { path: 'count', component: CountView },
     ]
   }
 ]

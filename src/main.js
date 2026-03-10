@@ -1,8 +1,13 @@
 import { createApp } from 'vue'
+
 import App from './App.vue'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
 import router from './router'
+
+import ElementPlus from 'element-plus'
+//引入element-plus相关样式
+// import 'element-plus/dist/index.css'
+// 引入覆盖的scss样式
+import './assets/css/element.scss'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
