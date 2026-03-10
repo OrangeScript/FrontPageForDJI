@@ -54,49 +54,7 @@
         </div>
       </div>
 
-      <!-- 右侧数据面板 -->
-      <div class="side-col">
-        <!-- 检测统计 -->
-        <div class="side-panel">
-          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="side-title"><span class="accent-bar"></span>实时检测统计</div>
-          <div class="det-stats">
-            <div class="det-item" v-for="d in detStats" :key="d.label">
-              <span class="det-icon">{{ d.icon }}</span>
-              <span class="det-label">{{ d.label }}</span>
-              <span class="det-val" :style="{ color: d.color }">{{ d.count }}</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- 置信度分布 -->
-        <div class="side-panel">
-          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="side-title"><span class="accent-bar"></span>置信度分布</div>
-          <div class="conf-bars">
-            <div class="conf-row" v-for="c in confBars" :key="c.range">
-              <span class="conf-label">{{ c.range }}</span>
-              <div class="conf-track">
-                <div class="conf-fill" :style="{ width: c.pct + '%', background: c.color }"></div>
-              </div>
-              <span class="conf-pct">{{ c.pct }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 检测日志 -->
-        <div class="side-panel log-panel">
-          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="side-title"><span class="accent-bar"></span>检测事件日志</div>
-          <div class="log-scroll" ref="logRef">
-            <div class="log-item" v-for="(log, i) in logs" :key="i">
-              <span class="log-time">{{ log.time }}</span>
-              <span class="log-cls" :style="{ color: log.color }">{{ log.cls }}</span>
-              <span class="log-conf">{{ log.conf }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -111,52 +69,17 @@ const inferMs = ref(12)
 const totalDetections = ref(47)
 let timer = null
 
-const detStats = ref([
-  { icon:'🚗', label:'车辆',   count:18, color:'#3aa3ff' },
-  { icon:'🚶', label:'行人',   count:12, color:'#00ff88' },
-  { icon:'🏍️', label:'摩托车', count:5,  color:'#f59e0b' },
-  { icon:'🚲', label:'自行车', count:4,  color:'#00d4ff' },
-  { icon:'🐕', label:'动物',   count:2,  color:'#a78bfa' },
-  { icon:'📦', label:'其他',   count:6,  color:'#718096' },
-])
 
-const confBars = ref([
-  { range:'90-100%', pct:35, color:'#00ff88' },
-  { range:'80-90%',  pct:28, color:'#3aa3ff' },
-  { range:'70-80%',  pct:22, color:'#00d4ff' },
-  { range:'60-70%',  pct:10, color:'#f59e0b' },
-  { range:'<60%',    pct:5,  color:'#ff3366' },
-])
-
-const classNames = ['车辆','行人','摩托车','自行车','动物','卡车','公交车','交通标志']
-const classColors = ['#3aa3ff','#00ff88','#f59e0b','#00d4ff','#a78bfa','#ff8c00','#ff3366','#718096']
-
-const logs = ref([])
-const logRef = ref(null)
-
-const genLog = () => {
-  const idx = Math.floor(Math.random() * classNames.length)
-  const conf = (60 + Math.random() * 39).toFixed(1)
-  const now = new Date().toLocaleTimeString('zh-CN', { hour12: false })
-  logs.value.unshift({ time: now, cls: classNames[idx], conf, color: classColors[idx] })
-  if (logs.value.length > 50) logs.value.pop()
-}
 
 const tick = () => {
   clock.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
   fps.value = 24 + Math.floor(Math.random() * 8)
   inferMs.value = 8 + Math.floor(Math.random() * 10)
   totalDetections.value = 35 + Math.floor(Math.random() * 25)
-
-  // 随机更新检测数
-  detStats.value.forEach(d => { d.count = Math.max(0, d.count + Math.floor(Math.random() * 5) - 2) })
-
-  genLog()
 }
 
 onMounted(() => {
   tick()
-  for (let i = 0; i < 15; i++) genLog()
   timer = setInterval(tick, 1500)
 })
 onUnmounted(() => clearInterval(timer))
@@ -185,7 +108,7 @@ onUnmounted(() => clearInterval(timer))
 .green { color:#00ff88; }
 
 /* 主布局 */
-.main-grid { display:grid; grid-template-columns:1fr 320px; gap:16px; height:calc(100vh - 80px); }
+.main-grid { display:grid; grid-template-columns:1fr; gap:16px; height:calc(100vh - 80px); }
 
 /* 视频列 */
 .video-col { display:flex; flex-direction:column; gap:16px; min-height:0; }
@@ -232,49 +155,4 @@ onUnmounted(() => clearInterval(timer))
 }
 .crosshair::before { width:1px; height:100%; left:50%; top:0; }
 .crosshair::after  { height:1px; width:100%; top:50%; left:0; }
-
-/* 侧栏 */
-.side-col { display:flex; flex-direction:column; gap:14px; min-height:0; overflow-y:auto; }
-.side-panel {
-  position:relative; padding:14px 16px;
-  background:rgba(8,30,55,.85); border:1px solid rgba(58,163,255,.1); border-radius:6px;
-  flex-shrink:0;
-}
-.log-panel { flex:1; min-height:200px; display:flex; flex-direction:column; }
-.side-title { font-size:13px; font-weight:600; color:#e0e6ed; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
-.accent-bar { display:inline-block; width:3px; height:14px; background:#3aa3ff; border-radius:2px; }
-
-/* 检测统计 */
-.det-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.det-item {
-  display:flex; align-items:center; gap:8px; padding:8px 10px;
-  background:rgba(0,40,80,.3); border-radius:4px; border:1px solid rgba(58,163,255,.06);
-}
-.det-icon { font-size:18px; }
-.det-label { flex:1; font-size:12px; color:#a0aec0; }
-.det-val { font-size:18px; font-weight:700; font-family:'Courier New',monospace; }
-
-/* 置信度条 */
-.conf-bars { display:flex; flex-direction:column; gap:8px; }
-.conf-row { display:flex; align-items:center; gap:8px; }
-.conf-label { width:60px; font-size:11px; color:#718096; text-align:right; font-family:'Courier New',monospace; }
-.conf-track { flex:1; height:8px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
-.conf-fill { height:100%; border-radius:4px; transition:width .5s ease; }
-.conf-pct { width:36px; font-size:11px; color:#a0aec0; font-family:'Courier New',monospace; }
-
-/* 检测日志 */
-.log-scroll { flex:1; overflow-y:auto; max-height:260px; }
-.log-scroll::-webkit-scrollbar { width:4px; }
-.log-scroll::-webkit-scrollbar-thumb { background:rgba(58,163,255,.2); border-radius:2px; }
-.log-item {
-  display:flex; align-items:center; gap:10px; padding:5px 0;
-  border-bottom:1px solid rgba(58,163,255,.05); font-size:12px;
-}
-.log-time { color:#718096; font-family:'Courier New',monospace; width:70px; flex-shrink:0; }
-.log-cls { font-weight:600; flex:1; }
-.log-conf { color:#a0aec0; font-family:'Courier New',monospace; width:42px; text-align:right; }
-
-/* 侧栏滚动条 */
-.side-col::-webkit-scrollbar { width:4px; }
-.side-col::-webkit-scrollbar-thumb { background:rgba(58,163,255,.2); border-radius:2px; }
 </style>

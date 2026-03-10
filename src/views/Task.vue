@@ -56,6 +56,11 @@
           </el-table-column>
           <el-table-column prop="operator" label="操作员" width="100" align="center" />
           <el-table-column prop="date" label="执行日期" width="120" align="center" />
+          <el-table-column label="操作" width="90" align="center" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" class="detail-btn" @click="openDetail(row)">📊 详情</el-button>
+            </template>
+          </el-table-column>
         </el-table>
 
         <div class="pagination-footer">
@@ -83,6 +88,57 @@
         </div>
       </div>
     </div>
+
+    <!-- 任务详情弹窗 -->
+    <el-dialog v-model="showDetail" :title="'任务详情 · ' + (detailData?.id || '')" width="880" class="detail-dialog" :append-to-body="true" destroy-on-close>
+      <div class="detail-content" v-if="detailData">
+        <!-- 左侧：数据信息 -->
+        <div class="detail-left">
+          <div class="detail-section">
+            <div class="section-title"><span class="accent-bar"></span>基本信息</div>
+            <div class="info-grid">
+              <div class="info-cell" v-for="f in detailFields" :key="f.label">
+                <span class="info-label">{{ f.label }}</span>
+                <span class="info-value" :class="f.cls || ''">{{ f.value }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- 航点完成度雷达图 -->
+          <div class="detail-section">
+            <div class="section-title"><span class="accent-bar"></span>航点执行分析</div>
+            <div ref="detailRadarRef" class="detail-chart"></div>
+          </div>
+        </div>
+        <!-- 右侧：地图+进度环 -->
+        <div class="detail-right">
+          <div class="detail-section">
+            <div class="section-title"><span class="accent-bar"></span>飞行轨迹地图</div>
+            <div class="map-wrapper">
+              <img src="@/assets/map.png" alt="flight map" class="map-img" />
+              <div class="map-overlay"></div>
+              <div class="map-ping"></div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <div class="section-title"><span class="accent-bar"></span>执行进度</div>
+            <div class="progress-row">
+              <div class="progress-ring">
+                <el-progress type="circle" :percentage="detailData.progressH" :width="90" :stroke-width="6" color="#00d4ff" :format="()=>detailData.progressH+'%'" />
+                <span class="ring-label">水平航点</span>
+              </div>
+              <div class="progress-ring">
+                <el-progress type="circle" :percentage="detailData.progressV" :width="90" :stroke-width="6" color="#00ff88" :format="()=>detailData.progressV+'%'" />
+                <span class="ring-label">垂直航点</span>
+              </div>
+              <div class="progress-ring">
+                <el-progress type="circle" :percentage="Math.round(detailData.flightDuration/detailData.estDuration*100)" :width="90" :stroke-width="6" color="#f59e0b" :format="()=>Math.round(detailData.flightDuration/detailData.estDuration*100)+'%'" />
+                <span class="ring-label">时间利用率</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
 
     <!-- 新建任务弹窗 -->
     <el-dialog v-model="showAddDialog" title="创建新任务" width="440" class="add-dialog" :append-to-body="true">
@@ -115,24 +171,24 @@ import { ElMessage } from 'element-plus'
 
 /* ============ Mock 数据 ============ */
 const allTasks = ref([
-  { id:'TSK-001', name:'北区 220kV 线路巡检',   type:'巡检', priority:'高',  status:'已完成', operator:'张伟',  date:'2026-03-01', drone:'M300 RTK' },
-  { id:'TSK-002', name:'南区光伏阵列测绘',      type:'测绘', priority:'中',  status:'已完成', operator:'李明',  date:'2026-03-02', drone:'Phantom 4' },
-  { id:'TSK-003', name:'西区山林火情侦察',      type:'侦察', priority:'紧急',status:'执行中', operator:'王强',  date:'2026-03-03', drone:'M30T' },
-  { id:'TSK-004', name:'东区河道水质采样',      type:'巡检', priority:'低',  status:'待执行', operator:'赵敏',  date:'2026-03-04', drone:'M300 RTK' },
-  { id:'TSK-005', name:'中心广场人流热力测绘',  type:'测绘', priority:'中',  status:'已完成', operator:'刘芳',  date:'2026-03-04', drone:'Mavic 3E' },
-  { id:'TSK-006', name:'港口集装箱盘点巡检',    type:'巡检', priority:'高',  status:'执行中', operator:'陈浩',  date:'2026-03-05', drone:'M30T' },
-  { id:'TSK-007', name:'山区失联人员搜救',      type:'搜救', priority:'紧急',status:'已完成', operator:'杨涛',  date:'2026-03-05', drone:'M300 RTK' },
-  { id:'TSK-008', name:'高速公路事故现场侦察',  type:'侦察', priority:'紧急',status:'已完成', operator:'周洁',  date:'2026-03-06', drone:'M30T' },
-  { id:'TSK-009', name:'农田植被 NDVI 测绘',    type:'测绘', priority:'低',  status:'待执行', operator:'吴磊',  date:'2026-03-07', drone:'Phantom 4' },
-  { id:'TSK-010', name:'化工园区泄漏排查',      type:'巡检', priority:'高',  status:'执行中', operator:'孙丽',  date:'2026-03-07', drone:'M300 RTK' },
-  { id:'TSK-011', name:'水库大坝裂缝检测',      type:'巡检', priority:'高',  status:'已完成', operator:'张伟',  date:'2026-03-08', drone:'M300 RTK' },
-  { id:'TSK-012', name:'城区 5G 信号覆盖测绘',  type:'测绘', priority:'中',  status:'已取消', operator:'李明',  date:'2026-03-08', drone:'Mavic 3E' },
-  { id:'TSK-013', name:'森林防火夜间巡检',      type:'巡检', priority:'紧急',status:'执行中', operator:'王强',  date:'2026-03-09', drone:'M30T' },
-  { id:'TSK-014', name:'地震灾区生存搜救',      type:'搜救', priority:'紧急',status:'待执行', operator:'杨涛',  date:'2026-03-10', drone:'M300 RTK' },
-  { id:'TSK-015', name:'风电场叶片缺陷检测',    type:'巡检', priority:'中',  status:'待执行', operator:'陈浩',  date:'2026-03-10', drone:'M300 RTK' },
-  { id:'TSK-016', name:'边境线异常活动侦察',    type:'侦察', priority:'高',  status:'待执行', operator:'周洁',  date:'2026-03-11', drone:'M30T' },
-  { id:'TSK-017', name:'高层建筑外墙巡检',      type:'巡检', priority:'低',  status:'已取消', operator:'刘芳',  date:'2026-03-11', drone:'Mavic 3E' },
-  { id:'TSK-018', name:'湿地生态多光谱测绘',    type:'测绘', priority:'中',  status:'待执行', operator:'吴磊',  date:'2026-03-12', drone:'Phantom 4' },
+  { id:'TSK-001', name:'北区 220kV 线路巡检',   type:'巡检', priority:'高',  status:'已完成', operator:'张伟',  date:'2026-03-01', drone:'M300 RTK', station:'220kV/GIS开关场',       startTime:'2026-03-01 08:00:00', endTime:'2026-03-01 10:00:00', flightDuration:7200,  flightDistance:5000,  hWaypoints:150, vWaypoints:200, progressH:100, progressV:100, estDuration:7200 },
+  { id:'TSK-002', name:'南区光伏阵列测绘',      type:'测绘', priority:'中',  status:'已完成', operator:'李明',  date:'2026-03-02', drone:'Phantom 4', station:'南区 50MW 光伏基地',    startTime:'2026-03-02 09:30:00', endTime:'2026-03-02 11:15:00', flightDuration:6300,  flightDistance:4200,  hWaypoints:120, vWaypoints:80,  progressH:100, progressV:100, estDuration:7000 },
+  { id:'TSK-003', name:'西区山林火情侦察',      type:'侦察', priority:'紧急',status:'执行中', operator:'王强',  date:'2026-03-03', drone:'M30T',      station:'西区林业防火指挥中心',  startTime:'2026-03-03 06:00:00', endTime:'—',                    flightDuration:3600,  flightDistance:8200,  hWaypoints:200, vWaypoints:50,  progressH:65,  progressV:40,  estDuration:7200 },
+  { id:'TSK-004', name:'东区河道水质采样',      type:'巡检', priority:'低',  status:'待执行', operator:'赵敏',  date:'2026-03-04', drone:'M300 RTK', station:'东区清水河监测站',      startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:180, vWaypoints:120, progressH:0,   progressV:0,   estDuration:5400 },
+  { id:'TSK-005', name:'中心广场人流热力测绘',  type:'测绘', priority:'中',  status:'已完成', operator:'刘芳',  date:'2026-03-04', drone:'Mavic 3E',  station:'市中心广场管理处',      startTime:'2026-03-04 14:00:00', endTime:'2026-03-04 15:20:00', flightDuration:4800,  flightDistance:3100,  hWaypoints:90,  vWaypoints:60,  progressH:100, progressV:100, estDuration:5400 },
+  { id:'TSK-006', name:'港口集装箱盘点巡检',    type:'巡检', priority:'高',  status:'执行中', operator:'陈浩',  date:'2026-03-05', drone:'M30T',      station:'临港自动化码头 T3',     startTime:'2026-03-05 07:00:00', endTime:'—',                    flightDuration:5400,  flightDistance:6800,  hWaypoints:220, vWaypoints:100, progressH:78,  progressV:55,  estDuration:7200 },
+  { id:'TSK-007', name:'山区失联人员搜救',      type:'搜救', priority:'紧急',status:'已完成', operator:'杨涛',  date:'2026-03-05', drone:'M300 RTK', station:'北山救援指挥部',        startTime:'2026-03-05 05:30:00', endTime:'2026-03-05 08:00:00', flightDuration:9000,  flightDistance:12000, hWaypoints:300, vWaypoints:150, progressH:100, progressV:100, estDuration:9000 },
+  { id:'TSK-008', name:'高速公路事故现场侦察',  type:'侦察', priority:'紧急',status:'已完成', operator:'周洁',  date:'2026-03-06', drone:'M30T',      station:'G50 沪渝高速 K128',    startTime:'2026-03-06 16:45:00', endTime:'2026-03-06 17:30:00', flightDuration:2700,  flightDistance:3500,  hWaypoints:80,  vWaypoints:40,  progressH:100, progressV:100, estDuration:3600 },
+  { id:'TSK-009', name:'农田植被 NDVI 测绘',    type:'测绘', priority:'低',  status:'待执行', operator:'吴磊',  date:'2026-03-07', drone:'Phantom 4', station:'西郊万亩粮田示范区',    startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:250, vWaypoints:60,  progressH:0,   progressV:0,   estDuration:10800 },
+  { id:'TSK-010', name:'化工园区泄漏排查',      type:'巡检', priority:'高',  status:'执行中', operator:'孙丽',  date:'2026-03-07', drone:'M300 RTK', station:'滨海化工产业园 A 区',   startTime:'2026-03-07 10:00:00', endTime:'—',                    flightDuration:4200,  flightDistance:5500,  hWaypoints:170, vWaypoints:90,  progressH:82,  progressV:60,  estDuration:7200 },
+  { id:'TSK-011', name:'水库大坝裂缝检测',      type:'巡检', priority:'高',  status:'已完成', operator:'张伟',  date:'2026-03-08', drone:'M300 RTK', station:'天目湖水库大坝',        startTime:'2026-03-08 07:00:00', endTime:'2026-03-08 09:30:00', flightDuration:9000,  flightDistance:7200,  hWaypoints:200, vWaypoints:180, progressH:100, progressV:100, estDuration:9000 },
+  { id:'TSK-012', name:'城区 5G 信号覆盖测绘',  type:'测绘', priority:'中',  status:'已取消', operator:'李明',  date:'2026-03-08', drone:'Mavic 3E',  station:'城区基站覆盖规划区',    startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:160, vWaypoints:40,  progressH:0,   progressV:0,   estDuration:5400 },
+  { id:'TSK-013', name:'森林防火夜间巡检',      type:'巡检', priority:'紧急',status:'执行中', operator:'王强',  date:'2026-03-09', drone:'M30T',      station:'西区林业防火指挥中心',  startTime:'2026-03-09 22:00:00', endTime:'—',                    flightDuration:2700,  flightDistance:4100,  hWaypoints:130, vWaypoints:70,  progressH:45,  progressV:30,  estDuration:7200 },
+  { id:'TSK-014', name:'地震灾区生存搜救',      type:'搜救', priority:'紧急',status:'待执行', operator:'杨涛',  date:'2026-03-10', drone:'M300 RTK', station:'震中临时指挥部',        startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:400, vWaypoints:200, progressH:0,   progressV:0,   estDuration:14400 },
+  { id:'TSK-015', name:'风电场叶片缺陷检测',    type:'巡检', priority:'中',  status:'待执行', operator:'陈浩',  date:'2026-03-10', drone:'M300 RTK', station:'东海风电场 B 区',       startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:100, vWaypoints:300, progressH:0,   progressV:0,   estDuration:10800 },
+  { id:'TSK-016', name:'边境线异常活动侦察',    type:'侦察', priority:'高',  status:'待执行', operator:'周洁',  date:'2026-03-11', drone:'M30T',      station:'北疆哨所 A-7',          startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:350, vWaypoints:50,  progressH:0,   progressV:0,   estDuration:10800 },
+  { id:'TSK-017', name:'高层建筑外墙巡检',      type:'巡检', priority:'低',  status:'已取消', operator:'刘芳',  date:'2026-03-11', drone:'Mavic 3E',  station:'CBD 金融大厦',          startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:60,  vWaypoints:400, progressH:0,   progressV:0,   estDuration:7200 },
+  { id:'TSK-018', name:'湿地生态多光谱测绘',    type:'测绘', priority:'中',  status:'待执行', operator:'吴磊',  date:'2026-03-12', drone:'Phantom 4', station:'崇明东滩湿地保护区',    startTime:'—',                   endTime:'—',                    flightDuration:0,     flightDistance:0,     hWaypoints:280, vWaypoints:80,  progressH:0,   progressV:0,   estDuration:10800 },
 ])
 
 /* ============ 顶部指标 ============ */
@@ -179,6 +235,75 @@ const addTask = () => {
   newTask.value = { name:'', type:'巡检', priority:'中' }
   ElMessage.success('任务已创建')
   renderCharts()
+}
+
+/* ============ 任务详情 ============ */
+const showDetail = ref(false)
+const detailData = ref(null)
+const detailRadarRef = ref(null)
+let detailRadarChart = null
+
+const detailFields = computed(() => {
+  const d = detailData.value
+  if (!d) return []
+  return [
+    { label:'任务编号',            value: d.id },
+    { label:'任务名称',            value: d.name },
+    { label:'站点名称',            value: d.station },
+    { label:'任务状态',            value: d.status, cls: statusClass(d.status) },
+    { label:'执行机型',            value: d.drone },
+    { label:'责任操作员',          value: d.operator },
+    { label:'开始时间',            value: d.startTime },
+    { label:'结束时间',            value: d.endTime },
+    { label:'飞行时长 (秒)',       value: d.flightDuration.toLocaleString() },
+    { label:'飞行距离 (米)',       value: d.flightDistance.toLocaleString() },
+    { label:'完成水平航点数',      value: d.hWaypoints },
+    { label:'完成垂直航点数',      value: d.vWaypoints },
+  ]
+})
+
+const openDetail = async (row) => {
+  detailData.value = row
+  showDetail.value = true
+  await nextTick()
+  // 渲染详情雷达图
+  if (detailRadarRef.value) {
+    if (detailRadarChart) detailRadarChart.dispose()
+    detailRadarChart = echarts.init(detailRadarRef.value)
+    detailRadarChart.setOption({
+      tooltip: { backgroundColor:'rgba(6,22,42,.92)', borderColor:'rgba(58,163,255,.3)', textStyle:{color:'#e0e6ed'} },
+      radar: {
+        indicator: [
+          { name:'水平航点', max: row.hWaypoints || 1 },
+          { name:'垂直航点', max: row.vWaypoints || 1 },
+          { name:'飞行距离', max: Math.max(row.flightDistance, 1) },
+          { name:'飞行时长', max: Math.max(row.estDuration, 1) },
+          { name:'任务进度', max: 100 },
+        ],
+        shape: 'polygon',
+        axisName: { color:'#718096', fontSize:11 },
+        splitLine: { lineStyle:{ color:'rgba(58,163,255,.1)' } },
+        splitArea: { areaStyle:{ color:['rgba(58,163,255,.02)','rgba(58,163,255,.06)'] } },
+        axisLine: { lineStyle:{ color:'rgba(58,163,255,.15)' } },
+      },
+      series: [{
+        type: 'radar',
+        data: [{
+          value: [
+            Math.round(row.hWaypoints * row.progressH / 100),
+            Math.round(row.vWaypoints * row.progressV / 100),
+            row.flightDistance,
+            row.flightDuration,
+            Math.round((row.progressH + row.progressV) / 2),
+          ],
+          name: '执行情况',
+          lineStyle: { color:'#00d4ff', width:2 },
+          areaStyle: { color:'rgba(0,212,255,.2)' },
+          itemStyle: { color:'#00d4ff', borderColor:'#061a2c', borderWidth:2 },
+        }],
+      }],
+    })
+  }
 }
 
 /* ============ ECharts ============ */
@@ -346,4 +471,176 @@ watch(allTasks, renderCharts, { deep: true })
 
 /* Tag 颜色 */
 :deep(.el-tag--dark) { border:none; }
+
+/* ---- 详情按钮 ---- */
+.detail-btn {
+  background:rgba(0,212,255,.1);color:#00d4ff;border:1px solid rgba(0,212,255,.25);
+  font-size:12px;font-weight:600;letter-spacing:.5px;padding:4px 10px;border-radius:4px;
+  transition:all .25s;
+}
+.detail-btn:hover { background:rgba(0,212,255,.2);box-shadow:0 0 12px rgba(0,212,255,.2);border-color:#00d4ff; }
+
+/* ---- 详情弹窗 ---- */
+:deep(.detail-dialog .el-dialog) { background:rgba(6,20,38,.96);border:1px solid rgba(58,163,255,.2);border-radius:8px;color:#e0e6ed; }
+:deep(.detail-dialog .el-dialog__title) { color:#e0e6ed;font-weight:700;letter-spacing:1px; }
+:deep(.detail-dialog .el-dialog__headerbtn .el-dialog__close) { color:#a0aec0; }
+
+.detail-content { display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:460px; }
+.detail-left,.detail-right { display:flex;flex-direction:column;gap:18px; }
+
+.detail-section {
+  background:rgba(8,30,55,.7);border:1px solid rgba(58,163,255,.1);border-radius:6px;
+  padding:16px 18px;
+}
+.section-title {
+  font-size:13px;font-weight:600;color:#e0e6ed;margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* 信息网格 */
+.info-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px 16px; }
+.info-cell { display:flex;flex-direction:column;gap:2px; }
+.info-label { font-size:11px;color:#718096;letter-spacing:.5px; }
+.info-value { font-size:14px;font-weight:600;color:#e0e6ed;font-family:'Courier New',monospace; }
+.info-value.done { color:#00ff88; }
+.info-value.running { color:#f59e0b; }
+.info-value.pending { color:#00d4ff; }
+.info-value.cancelled { color:#ff3366; }
+
+/* 详情雷达图 */
+.detail-chart { height:200px; }
+
+/* 地图 */
+.map-wrapper {
+  position:relative;border-radius:6px;overflow:hidden;border:1px solid rgba(58,163,255,.15);
+  background:#000;
+}
+.map-img { width:100%;display:block;opacity:.85; }
+.map-overlay {
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(6,26,44,.1) 0%,rgba(6,26,44,.5) 100%);
+  pointer-events:none;
+}
+.map-ping {
+  position:absolute;top:42%;left:55%;
+  width:14px;height:14px;border-radius:50%;
+  background:#ff3366;box-shadow:0 0 12px #ff3366;
+  animation:mapPing 1.5s ease-in-out infinite;
+}
+@keyframes mapPing {
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.6);opacity:.4}
+}
+
+/* 进度环行 */
+.progress-row { display:flex;justify-content:space-around;padding:8px 0; }
+.progress-ring { display:flex;flex-direction:column;align-items:center;gap:8px; }
+.ring-label { font-size:11px;color:#718096; }
+:deep(.el-progress__text) { color:#e0e6ed !important;font-weight:700;font-family:'Courier New',monospace; }
+:deep(.el-progress path.el-progress-circle__track) { stroke:rgba(58,163,255,.1); }
+</style>
+
+<!-- 全局样式：彻底修复 append-to-body 弹窗白色背景 -->
+<style>
+/* === 详情弹窗：所有层级 === */
+.detail-dialog.el-overlay { background:rgba(0,0,0,.55) !important; }
+.detail-dialog .el-overlay-dialog { background:transparent !important; }
+.detail-dialog .el-dialog,
+.detail-dialog.el-dialog {
+  --el-dialog-bg-color: rgba(6,20,38,.98) !important;
+  background: rgba(6,20,38,.98) !important;
+  border: 1px solid rgba(58,163,255,.25) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 60px rgba(0,100,255,.18), 0 0 120px rgba(0,0,0,.7) !important;
+  color: #e0e6ed !important;
+}
+.detail-dialog .el-dialog__header,
+.detail-dialog.el-dialog .el-dialog__header {
+  background: rgba(6,20,38,.98) !important;
+  border-bottom: 1px solid rgba(58,163,255,.15) !important;
+  padding: 16px 20px !important;
+  margin-right: 0 !important;
+}
+.detail-dialog .el-dialog__title,
+.detail-dialog.el-dialog .el-dialog__title {
+  color: #e0e6ed !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  letter-spacing: 1.5px !important;
+}
+.detail-dialog .el-dialog__headerbtn .el-dialog__close,
+.detail-dialog.el-dialog .el-dialog__headerbtn .el-dialog__close {
+  color: #718096 !important;
+  font-size: 18px !important;
+}
+.detail-dialog .el-dialog__headerbtn .el-dialog__close:hover {
+  color: #00d4ff !important;
+}
+.detail-dialog .el-dialog__body,
+.detail-dialog.el-dialog .el-dialog__body {
+  background: rgba(6,20,38,.98) !important;
+  color: #e0e6ed !important;
+  padding: 20px !important;
+}
+/* 详情弹窗内部面板 */
+.detail-dialog .detail-content { display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:460px; }
+.detail-dialog .detail-left,
+.detail-dialog .detail-right { display:flex;flex-direction:column;gap:18px; }
+.detail-dialog .detail-section {
+  background:rgba(8,30,55,.8) !important;border:1px solid rgba(58,163,255,.12);border-radius:6px;
+  padding:16px 18px;
+}
+.detail-dialog .section-title {
+  font-size:13px;font-weight:600;color:#e0e6ed;margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;
+}
+.detail-dialog .accent-bar { width:4px;height:18px;background:#3aa3ff;border-radius:2px;display:inline-block; }
+.detail-dialog .info-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px 16px; }
+.detail-dialog .info-cell { display:flex;flex-direction:column;gap:2px; }
+.detail-dialog .info-label { font-size:11px;color:#718096;letter-spacing:.5px; }
+.detail-dialog .info-value { font-size:14px;font-weight:600;color:#e0e6ed;font-family:'Courier New',monospace; }
+.detail-dialog .info-value.done { color:#00ff88; }
+.detail-dialog .info-value.running { color:#f59e0b; }
+.detail-dialog .info-value.pending { color:#00d4ff; }
+.detail-dialog .info-value.cancelled { color:#ff3366; }
+.detail-dialog .detail-chart { height:200px; }
+.detail-dialog .map-wrapper {
+  position:relative;border-radius:6px;overflow:hidden;border:1px solid rgba(58,163,255,.15);background:#000;
+}
+.detail-dialog .map-img { width:100%;display:block;opacity:.85; }
+.detail-dialog .map-overlay {
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(6,26,44,.1) 0%,rgba(6,26,44,.5) 100%);
+  pointer-events:none;
+}
+.detail-dialog .map-ping {
+  position:absolute;top:42%;left:55%;width:14px;height:14px;border-radius:50%;
+  background:#ff3366;box-shadow:0 0 12px #ff3366;
+  animation:mapPing 1.5s ease-in-out infinite;
+}
+.detail-dialog .progress-row { display:flex;justify-content:space-around;padding:8px 0; }
+.detail-dialog .progress-ring { display:flex;flex-direction:column;align-items:center;gap:8px; }
+.detail-dialog .ring-label { font-size:11px;color:#718096; }
+.detail-dialog .el-progress__text { color:#e0e6ed !important;font-weight:700;font-family:'Courier New',monospace; }
+.detail-dialog .el-progress path.el-progress-circle__track { stroke:rgba(58,163,255,.1); }
+@keyframes mapPing { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.4} }
+
+/* === 新建任务弹窗 === */
+.add-dialog.el-overlay { background:rgba(0,0,0,.5) !important; }
+.add-dialog .el-dialog,
+.add-dialog.el-dialog {
+  --el-dialog-bg-color: rgba(6,20,38,.97) !important;
+  background: rgba(6,20,38,.97) !important;
+  border: 1px solid rgba(58,163,255,.2) !important;
+  border-radius: 8px !important;
+  color: #e0e6ed !important;
+}
+.add-dialog .el-dialog__header { background:transparent !important;border-bottom:1px solid rgba(58,163,255,.1) !important; }
+.add-dialog .el-dialog__title { color:#e0e6ed !important; }
+.add-dialog .el-dialog__body { background:transparent !important;color:#e0e6ed !important; }
+.add-dialog .el-dialog__footer { background:transparent !important;border-top:1px solid rgba(58,163,255,.1) !important; }
+.add-dialog .el-form-item__label { color:#a0aec0 !important; }
+.add-dialog .el-input__wrapper { background:rgba(0,40,80,.5) !important;border:1px solid rgba(58,163,255,.2) !important;box-shadow:none !important; }
+.add-dialog .el-input__inner { color:#e0e6ed !important; }
+.add-dialog .el-select .el-input__wrapper { background:rgba(0,40,80,.5) !important;border:1px solid rgba(58,163,255,.2) !important;box-shadow:none !important; }
 </style>

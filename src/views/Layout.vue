@@ -23,8 +23,8 @@
           <span class="menu-text">任务管理</span>
         </el-menu-item>
         <el-menu-item index="/mission">
-          <el-icon class="emoji-icon"><span>🗺️</span></el-icon>
-          <span class="menu-text">任务z</span>
+          <el-icon class="emoji-icon"><span>�</span></el-icon>
+          <span class="menu-text">任务统计</span>
         </el-menu-item>
 
         <el-menu-item index="/info">
