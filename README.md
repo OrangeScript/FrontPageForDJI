@@ -6,7 +6,7 @@ This template should help get you started developing with Vue 3 in Vite.
 ```powershell
 PS C:\Users\qq258> docker run --rm -it `
   -e MTX_RTSPTRANSPORTS=tcp `
-  -e MTX_WEBRTCADDITIONALHOSTS=192.168.31.198 `
+  -e MTX_WEBRTCADDITIONALHOSTS=192.168.3.4 `
   -p 8554:8554 `
   -p 1935:1935 `
   -p 8888:8888 `
@@ -32,6 +32,8 @@ websockify 8765 10.87.49.48:8081
 ffmpeg -rtsp_transport tcp -i rtsp://jie:123456789a@192.168.31.118:554/Streaming/Channels/101  -c copy -f rtsp rtsp://localhost:8554/live
 ffmpeg -rtsp_transport tcp -i rtsp://aaa:aaa@10.87.49.48:8554/streaming/live/1  -c copy -f rtsp rtsp://localhost:8554/live
 ffmpeg -rtsp_transport tcp -i rtsp://aaa:aaa@127.0.0.1:8559/streaming/live/1 -c copy -f rtsp rtsp://localhost:8554/live
+
+ffmpeg -rtsp_transport tcp -i rtsp://localhost/live -c copy -f rtsp rtsp://localhost:8554/live
 ```
 ## Recommended IDE Setup
 
