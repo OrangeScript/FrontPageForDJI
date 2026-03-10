@@ -33,7 +33,13 @@
           <span class="menu-text">YOLO识别结果</span>
         </el-menu-item>
 
-        <el-sub-menu index="/me">
+        <!-- 退出登录 -->
+        <el-menu-item @click="handleLogout" class="logout-item">
+          <el-icon class="emoji-icon"><span>🚪</span></el-icon>
+          <span class="menu-text">退出登录</span>
+        </el-menu-item>
+
+        <!-- <el-sub-menu index="/me">
           <template #title>
             <el-icon class="emoji-icon"><span>🕹️</span></el-icon>
             <span class="menu-text">控制</span>
@@ -58,7 +64,7 @@
         <el-menu-item index="/test">
           <el-icon class="emoji-icon"><span>🧪</span></el-icon>
           <span class="menu-text">测试</span>
-        </el-menu-item>
+        </el-menu-item> -->
       </el-menu>
     </el-aside>
 
@@ -73,7 +79,10 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { logout } from '@/utils/mockAuth'
 
+const router = useRouter()
 const isHover = ref(false)
 
 const COLLAPSE_W = 64
@@ -81,6 +90,11 @@ const EXPAND_W = 200
 
 const asideWidth = computed(() => (isHover.value ? `${EXPAND_W}px` : `${COLLAPSE_W}px`))
 const menuCollapse = computed(() => !isHover.value)
+
+const handleLogout = () => {
+  logout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -156,6 +170,17 @@ const menuCollapse = computed(() => !isHover.value)
 /* 子菜单展开的背景也压暗一点 */
 .menu :deep(.el-menu--inline) {
   background: rgba(0, 0, 0, 0.12);
+}
+
+/* 退出登录在底部 */
+.menu :deep(.logout-item) {
+  position: absolute;
+  bottom: 12px;
+  width: 100%;
+}
+.menu :deep(.logout-item:hover) {
+  background: rgba(255, 51, 102, 0.12);
+  color: #ff3366;
 }
 
 /* 收起模式下，把 tooltip 的视觉抖动降到最低 */

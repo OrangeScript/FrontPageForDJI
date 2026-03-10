@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isAuthenticated } from '@/utils/mockAuth'
+
 import UavControlView from '@/views/UavControl.vue'
 import TaskView from '@/views/Task.vue'
 import YoloIdentifyView from '@/views/YoloIdentify.vue'
@@ -15,19 +17,22 @@ import UpdatePasswordView from '@/views/UpdatePassword.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/index'  // 默认重定向到 index 页面
+    redirect: '/index'
   },
   {
     path: '/login',
-    component: LoginView  // 登录页面
+    component: LoginView,
+    meta: { guest: true }
   },
   {
     path: '/register',
-    component: RegisterView
+    component: RegisterView,
+    meta: { guest: true }
   },
   {
     path: '/update-password',
-    component: UpdatePasswordView
+    component: UpdatePasswordView,
+    meta: { guest: true }
   },
   {
     path: '/',
@@ -51,6 +56,15 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+/* ---------- 导航守卫：未登录跳转登录页 ---------- */
+router.beforeEach((to, _from, next) => {
+  if (to.matched.some(r => r.meta.requiresAuth) && !isAuthenticated()) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router
